@@ -164,11 +164,18 @@ public/
 ### **Key Commands**
 ```bash
 npm run dev          # Development server
-npm run build        # Production build
+npm run build        # Production build (includes prisma generate)
 npm run start        # Production server
 npm run lint         # ESLint check
-npx prisma studio    # Database GUI
+npm run db:push      # Push schema to database
+npm run db:studio    # Database GUI
 ```
+
+### **Build Process**
+The build process automatically runs `prisma generate` to ensure the Prisma client is always up to date:
+- **prebuild**: Generates Prisma client before building
+- **postinstall**: Generates Prisma client after npm install
+- **Automatic**: No manual Prisma generation needed
 
 ## 🚀 Deployment
 
