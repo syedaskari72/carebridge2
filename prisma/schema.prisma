@@ -1,0 +1,529 @@
+// CareBridge Database Schema
+// Based on UML: User -> Patient -> Booking -> Nurse -> Payment + Chatbot
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Base User model (inherits to Patient/Nurse/Doctor/Admin)
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  phone     String?
+  cnic      String?  // National ID for Pakistan
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Auth fields
+  emailVerified DateTime?
+  image         String?
+  password      String?  // For email/password auth
+  accounts      Account[]
+  sessions      Session[]
+
+  // User type and related data
+  userType UserType @default(PATIENT)
+  isActive Boolean  @default(true)
+  patient  Patient?
+  nurse    Nurse?
+  doctor   Doctor?
+  admin    Admin?
+
+  @@map("users")
+}
+
+enum UserType {
+  PATIENT
+  NURSE
+  DOCTOR
+  ADMIN
+}
+
+// Patient extends User (from UML)
+model Patient {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Patient-specific fields from UML
+  contactInfo     String?
+  bookingHistory  String? // JSON field for booking history
+  medicalHistory  String? // JSON field for medical history
+  servicesViewed  String? // JSON field for services viewed
+
+  // Medical information
+  bloodType        String?
+  allergies        String[] // Array of allergies
+  medications      String[] // Current medications
+  medicalConditions String[] // Medical conditions
+  
+  // Emergency contact
+  emergencyContactName         String?
+  emergencyContactPhone        String?
+  emergencyContactRelationship String?
+
+  // Preferences
+  preferredLanguage String @default("English")
+  notifications     Json   @default("{\"email\": true, \"sms\": true, \"push\": true}")
+
+  // Relations
+  bookings      Booking[]
+  chatSessions  ChatSession[]
+  prescriptions Prescription[]
+  treatmentLogs TreatmentLog[]
+  consultations Consultation[]
+  emergencyCases EmergencyCase[]
+
+  @@map("patients")
+}
+
+// Nurse model (from UML)
+model Nurse {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Nurse-specific fields from UML
+  nurseId      String  @unique // Professional ID
+  rating       Float   @default(0.0)
+  specialties  String[] // Array of specialties
+  department   Department
+  availability String? // JSON field for availability schedule
+
+  // Professional info
+  licenseNumber    String
+  experience       String
+  hourlyRate       Float
+  location         String
+  profileImage     String?
+  bio              String?
+
+  // Status
+  isAvailable      Boolean @default(true)
+  isVerified       Boolean @default(false)
+  verifiedAt       DateTime?
+  verifiedBy       String?
+  isOnDuty         Boolean @default(false)
+
+  // Safety & Security
+  currentLocation  String? // JSON: {lat, lng, timestamp}
+  lastCheckIn      DateTime?
+  lastCheckOut     DateTime?
+  emergencyContact String? // JSON: {name, phone, relationship}
+
+  // Relations
+  bookings         Booking[]
+  safetyAlerts     SafetyAlert[]
+  treatmentLogs    TreatmentLog[]
+  documents        NurseDocument[]
+
+  @@map("nurses")
+}
+
+// Nurse Documents for verification
+model NurseDocument {
+  id       String   @id @default(cuid())
+  nurseId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Document details
+  type        DocumentType
+  fileName    String
+  fileUrl     String       // Cloudinary URL
+  cloudinaryId String      // Cloudinary public ID for deletion
+  fileSize    Int?
+  mimeType    String?
+
+  // Verification status
+  isVerified  Boolean @default(false)
+  verifiedAt  DateTime?
+  verifiedBy  String?      // Admin ID who verified
+  notes       String?      // Admin notes
+
+  // Relations
+  nurse Nurse @relation(fields: [nurseId], references: [id], onDelete: Cascade)
+
+  @@map("nurse_documents")
+}
+
+enum DocumentType {
+  LICENSE
+  DEGREE
+  CERTIFICATE
+  ID_CARD
+  EXPERIENCE_LETTER
+  OTHER
+}
+
+// Doctor model (new)
+model Doctor {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Doctor-specific fields
+  doctorId       String  @unique // Professional ID
+  specialization String
+  department     Department
+  licenseNumber  String
+  experience     String
+  consultationFee Float
+
+  // Status
+  isAvailable    Boolean @default(true)
+  isVerified     Boolean @default(false)
+  isOnCall       Boolean @default(false)
+
+  // Relations
+  bookings       Booking[]
+  prescriptions  Prescription[]
+  consultations  Consultation[]
+  emergencyCases EmergencyCase[]
+
+  @@map("doctors")
+}
+
+enum Department {
+  GENERAL
+  CARDIOLOGY
+  PEDIATRICS
+  ICU
+  EMERGENCY
+  ORTHOPEDICS
+  NEUROLOGY
+  GYNECOLOGY
+  DERMATOLOGY
+  PSYCHIATRY
+}
+
+// Admin model (from UML)
+model Admin {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Admin-specific fields from UML
+  adminId String @unique
+  role    AdminRole @default(MODERATOR)
+
+  // Methods from UML implemented via relations and business logic:
+  // - manageNurses() -> via Nurse model operations
+  // - managePatients() -> via Patient model operations  
+  // - manageBookings() -> via Booking model operations
+  // - monitorSystemPerformance() -> via analytics/logging
+  // - approveNurseProfiles() -> via Nurse.isVerified field
+
+  @@map("admins")
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  MODERATOR
+}
+
+// Booking model (from UML - association between Patient and Nurse)
+model Booking {
+  id        String   @id @default(cuid())
+  patientId String
+  nurseId   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Booking details from UML
+  serviceType     ServiceType
+  appointmentDate DateTime
+  appointmentTime String // morning/afternoon/evening
+  status          BookingStatus @default(PENDING)
+  urgencyLevel    UrgencyLevel
+  address         String
+  notes           String?
+  completedAt     DateTime?
+
+  // Cost breakdown
+  nurseFee        Float?
+  doctorFee       Float?
+  emergencyFee    Float?
+  materialCost    Float?
+  totalCost       Float?
+
+  // Doctor approval
+  doctorId        String?
+  doctorApproved  Boolean @default(false)
+  doctorNotes     String?
+
+  // Relations
+  patient       Patient       @relation(fields: [patientId], references: [id])
+  nurse         Nurse?        @relation(fields: [nurseId], references: [id])
+  doctor        Doctor?       @relation(fields: [doctorId], references: [id])
+  payment       Payment?
+  treatmentLogs TreatmentLog[]
+  consultations Consultation[]
+
+  @@map("bookings")
+}
+
+enum ServiceType {
+  NURSE_VISIT
+  LAB_SERVICE
+  EMERGENCY_SERVICE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum UrgencyLevel {
+  ROUTINE
+  URGENT
+  EMERGENCY
+}
+
+// Payment model (from UML)
+model Payment {
+  id        String   @id @default(cuid())
+  bookingId String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Payment details from UML
+  paymentId String @unique // External payment processor ID
+  patientId String
+  nurseId   String
+  amount    Float
+  status    PaymentStatus @default(PENDING)
+
+  // Payment methods from UML:
+  // - processPayment() -> status = PROCESSING -> COMPLETED/FAILED
+  // - refundPayment() -> status = REFUNDED
+  // - generateInvoice() -> handled by invoice generation logic
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// Patient Records & Treatment Tracking
+model Prescription {
+  id        String   @id @default(cuid())
+  patientId String
+  doctorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Prescription details
+  medications    Json    // Array of {name, dosage, frequency, duration}
+  diagnosis      String
+  notes          String?
+  isActive       Boolean @default(true)
+
+  // Relations
+  patient Patient @relation(fields: [patientId], references: [id])
+  doctor  Doctor  @relation(fields: [doctorId], references: [id])
+
+  @@map("prescriptions")
+}
+
+model TreatmentLog {
+  id        String   @id @default(cuid())
+  patientId String
+  nurseId   String
+  bookingId String?
+  createdAt DateTime @default(now())
+
+  // Treatment details
+  treatmentType String
+  notes         String
+  vitals        Json?   // {bp, temp, pulse, etc}
+  medications   Json?   // Medications administered
+  nextVisit     DateTime?
+
+  // Relations
+  patient Patient @relation(fields: [patientId], references: [id])
+  nurse   Nurse   @relation(fields: [nurseId], references: [id])
+  booking Booking? @relation(fields: [bookingId], references: [id])
+
+  @@map("treatment_logs")
+}
+
+model Consultation {
+  id        String   @id @default(cuid())
+  patientId String
+  doctorId  String
+  bookingId String?
+  createdAt DateTime @default(now())
+
+  // Consultation details
+  type        ConsultationType
+  diagnosis   String?
+  treatment   String?
+  notes       String?
+  followUp    DateTime?
+  cost        Float
+
+  // Relations
+  patient Patient @relation(fields: [patientId], references: [id])
+  doctor  Doctor  @relation(fields: [doctorId], references: [id])
+  booking Booking? @relation(fields: [bookingId], references: [id])
+
+  @@map("consultations")
+}
+
+enum ConsultationType {
+  ROUTINE
+  EMERGENCY
+  FOLLOW_UP
+  SECOND_OPINION
+}
+
+// Safety & Security Models
+model SafetyAlert {
+  id       String   @id @default(cuid())
+  nurseId  String
+  createdAt DateTime @default(now())
+
+  // Alert details
+  type        SafetyAlertType
+  location    String // JSON: {lat, lng, address}
+  description String?
+  isResolved  Boolean @default(false)
+  resolvedAt  DateTime?
+
+  // Relations
+  nurse Nurse @relation(fields: [nurseId], references: [id])
+
+  @@map("safety_alerts")
+}
+
+enum SafetyAlertType {
+  SOS_PANIC
+  CHECK_IN_MISSED
+  LOCATION_ALERT
+  EMERGENCY_CONTACT
+}
+
+model EmergencyCase {
+  id        String   @id @default(cuid())
+  patientId String?  // Can be null for guest emergency
+  doctorId  String?  // Assigned doctor
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Emergency details
+  type        EmergencyType
+  severity    EmergencySeverity
+  location    String // JSON: {lat, lng, address}
+  description String
+  status      EmergencyStatus @default(PENDING)
+
+  // Contact info for guest emergencies
+  guestName   String?
+  guestPhone  String?
+
+  // Relations
+  patient Patient? @relation(fields: [patientId], references: [id])
+  doctor  Doctor?  @relation(fields: [doctorId], references: [id])
+
+  @@map("emergency_cases")
+}
+
+enum EmergencyType {
+  MEDICAL
+  ACCIDENT
+  CARDIAC
+  RESPIRATORY
+  TRAUMA
+  OTHER
+}
+
+enum EmergencySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum EmergencyStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  CANCELLED
+}
+
+// Chatbot/AI Assistant model (from UML)
+model ChatSession {
+  id        String   @id @default(cuid())
+  patientId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Chat session data
+  messages Json // Array of messages with timestamps
+
+  // Relations
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@map("chat_sessions")
+}
+
+// NextAuth.js required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}

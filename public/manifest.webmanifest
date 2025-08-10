@@ -1,0 +1,70 @@
+{
+  "name": "CareBridge",
+  "short_name": "CareBridge",
+  "description": "On-demand home healthcare: request nurses or lab attendants and get AI guidance via a virtual assistant.",
+  "lang": "en",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0ea5b7",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Book a Nurse",
+      "short_name": "Book Nurse",
+      "url": "/book?source=shortcuts"
+    },
+    {
+      "name": "My Bookings",
+      "short_name": "Bookings",
+      "url": "/bookings"
+    },
+    {
+      "name": "Chat Assistant",
+      "short_name": "Assistant",
+      "url": "/assistant"
+    }
+  ],
+  "categories": ["health", "medical", "productivity"]
+}
+
