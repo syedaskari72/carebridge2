@@ -12,7 +12,35 @@ interface SideDrawerProps {
 }
 
 export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+
+  // Debug session state
+  console.log("[SideDrawer] Session status:", status, "Session:", session);
+
+  const handleSignOut = async () => {
+    console.log("[SideDrawer] Starting logout process...");
+    try {
+      // Close the drawer first
+      onClose();
+
+      // Clear any local storage or session storage
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Sign out with NextAuth
+      await signOut({
+        callbackUrl: "/",
+        redirect: false
+      });
+
+      // Force a complete page reload to clear all state
+      window.location.href = "/";
+    } catch (error) {
+      console.error("[SideDrawer] Logout error:", error);
+      // Fallback: force reload anyway
+      window.location.href = "/";
+    }
+  };
 
   // Close drawer on escape key
   useEffect(() => {
@@ -240,10 +268,7 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
                   <span>Settings</span>
                 </Link>
                 <button
-                  onClick={() => {
-                    signOut();
-                    onClose();
-                  }}
+                  onClick={handleSignOut}
                   className="flex items-center space-x-3 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors w-full"
                 >
                   <LogOut className="h-5 w-5" />

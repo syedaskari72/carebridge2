@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +19,36 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { open: openDrawer } = useDrawer();
   const { data: session, status } = useSession();
+
+  // Debug session state
+  console.log("[Header] Session status:", status, "Session:", session);
+
+  // Force re-render when session status changes
+  useEffect(() => {
+    console.log("[Header] Session status changed:", status);
+  }, [status, session]);
+
+  const handleSignOut = async () => {
+    console.log("[Header] Starting logout process...");
+    try {
+      // Clear any local storage or session storage
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Sign out with NextAuth
+      await signOut({
+        callbackUrl: "/",
+        redirect: false
+      });
+
+      // Force a complete page reload to clear all state
+      window.location.href = "/";
+    } catch (error) {
+      console.error("[Header] Logout error:", error);
+      // Fallback: force reload anyway
+      window.location.href = "/";
+    }
+  };
 
   const getNavigationItems = () => {
     if (!session) {
@@ -89,7 +119,7 @@ export default function Header() {
           <div className="hidden md:flex items-center space-x-4">
             <InstallButton />
             <ThemeToggle />
-            {!session ? (
+            {!session || status === "unauthenticated" ? (
               <>
                 <Button asChild>
                   <Link href="/book">Book a Nurse</Link>
@@ -98,7 +128,9 @@ export default function Header() {
                   <Link href="/auth/signin">Sign In</Link>
                 </Button>
               </>
-            ) : (
+            ) : status === "loading" ? (
+              <div className="text-sm text-muted-foreground">Loading...</div>
+            ) : status === "authenticated" && session ? (
               <>
                 {session.user.userType === "PATIENT" && (
                   <Button asChild>
@@ -117,13 +149,13 @@ export default function Header() {
                     <DropdownMenuItem asChild>
                       <Link href="/profile">Profile</Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => signOut()}>
+                    <DropdownMenuItem onClick={handleSignOut}>
                       Sign Out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
-            )}
+            ) : null}
           </div>
 
           {/* Mobile menu button */}

@@ -1,5 +1,5 @@
 /* CareBridge PWA service worker for mobile-first offline caching */
-const CACHE_NAME = 'carebridge-cache-v3';
+const CACHE_NAME = 'carebridge-cache-v4';
 const APP_SHELL = [
   '/',
   '/manifest.json',
@@ -37,13 +37,20 @@ self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (req.method !== 'GET') return;
 
+  // Skip chrome-extension, moz-extension, and other non-http(s) requests
+  if (!req.url.startsWith('http://') && !req.url.startsWith('https://')) return;
+
   // Network-first strategy for navigation requests (pages)
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req)
         .then((res) => {
           const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(req, copy).catch((err) => {
+              console.warn('Cache put failed for navigation:', err);
+            });
+          });
           return res;
         })
         .catch(() => caches.match(req).then((r) => r || caches.match('/')))
@@ -59,7 +66,11 @@ self.addEventListener('fetch', (event) => {
         // Only cache successful, basic, same-origin responses
         if (res && res.status === 200 && res.type === 'basic') {
           const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(req, copy).catch((err) => {
+              console.warn('Cache put failed for static asset:', err);
+            });
+          });
         }
         return res;
       });
