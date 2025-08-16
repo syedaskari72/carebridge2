@@ -1,8 +1,8 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,48 +12,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, MapPin, Star, User, Phone, Heart, Stethoscope } from "lucide-react";
 
-// Mock data for available nurses
-const mockNurses = [
-  {
-    id: "1",
-    name: "Sarah Johnson",
-    specialization: "Cardiac Care",
-    experience: "8 years",
-    rating: 4.9,
-    reviews: 127,
-    hourlyRate: 2500,
-    availability: ["morning", "afternoon"],
-    image: "/api/placeholder/100/100",
-    bio: "Specialized in cardiac care with extensive experience in home healthcare.",
-    certifications: ["RN", "BLS", "ACLS"]
-  },
-  {
-    id: "2",
-    name: "Emily Davis",
-    specialization: "Diabetes Management",
-    experience: "6 years",
-    rating: 4.8,
-    reviews: 89,
-    hourlyRate: 2200,
-    availability: ["morning", "evening"],
-    image: "/api/placeholder/100/100",
-    bio: "Expert in diabetes management and medication administration.",
-    certifications: ["RN", "CDE", "BLS"]
-  },
-  {
-    id: "3",
-    name: "Maria Rodriguez",
-    specialization: "Wound Care",
-    experience: "10 years",
-    rating: 4.9,
-    reviews: 156,
-    hourlyRate: 2800,
-    availability: ["afternoon", "evening"],
-    image: "/api/placeholder/100/100",
-    bio: "Specialized in wound care and post-surgical recovery.",
-    certifications: ["RN", "CWON", "BLS"]
-  }
-];
+interface Nurse {
+  id: string;
+  user: {
+    name: string;
+    email: string;
+    phone?: string;
+  };
+  department: string;
+  isVerified: boolean;
+  rating: number;
+  specialties: string[];
+  experience: string;
+  hourlyRate: number;
+  location: string;
+  bio?: string;
+  isAvailable: boolean;
+  licenseNumber: string;
+}
 
 const serviceTypes = [
   { id: "blood-pressure", name: "Blood Pressure Monitoring", duration: "30 min" },
@@ -64,19 +40,22 @@ const serviceTypes = [
   { id: "post-surgery", name: "Post-Surgery Care", duration: "90 min" }
 ];
 
-export default function BookNursePage() {
+function BookNurseContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedService, setSelectedService] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [selectedNurse, setSelectedNurse] = useState("");
   const [notes, setNotes] = useState("");
   const [step, setStep] = useState(1); // 1: Service, 2: Nurse, 3: Schedule, 4: Confirm
+  const [nurses, setNurses] = useState<Nurse[]>([]);
+  const [loadingNurses, setLoadingNurses] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
-    
+
     if (!session) {
       router.push("/auth/signin");
       return;
@@ -86,27 +65,65 @@ export default function BookNursePage() {
       router.push(`/dashboard/${session.user.userType.toLowerCase()}`);
       return;
     }
-  }, [session, status, router]);
+
+    // Load nurses when component mounts
+    loadNurses();
+
+    // Check if a nurse is pre-selected from URL params
+    const preSelectedNurse = searchParams.get('nurse');
+    if (preSelectedNurse) {
+      setSelectedNurse(preSelectedNurse);
+      setStep(3); // Skip to schedule step since nurse is already selected
+    }
+  }, [session, status, router, searchParams]);
+
+  const loadNurses = async () => {
+    setLoadingNurses(true);
+    try {
+      const res = await fetch("/api/nurses");
+      if (res.ok) {
+        const data = await res.json();
+        setNurses(data);
+      } else {
+        console.error("Failed to load nurses");
+      }
+    } catch (e) {
+      console.error("Error loading nurses:", e);
+    } finally {
+      setLoadingNurses(false);
+    }
+  };
 
   const handleBooking = async () => {
     try {
-      const bookingData = {
+      if (!session) {
+        return router.push("/auth/signin");
+      }
+      if (!selectedDate || !selectedTime || !selectedService) {
+        alert("Please select service, date and time");
+        return;
+      }
+      const payload = {
         serviceType: selectedService,
-        nurseId: selectedNurse,
-        date: selectedDate,
-        time: selectedTime,
-        notes: notes,
-        patientId: session?.user.id
+        nurseId: selectedNurse || null,
+        appointmentDate: selectedDate,
+        appointmentTime: selectedTime,
+        urgencyLevel: "ROUTINE",
+        address: "Not provided",
+        notes: notes || null
       };
 
-      // In a real app, this would be an API call
-      console.log("Booking data:", bookingData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || "Failed to create booking");
+      }
       alert("Booking confirmed! You will receive a confirmation email shortly.");
-      router.push("/dashboard/patient");
+      router.push("/bookings");
     } catch (error) {
       console.error("Booking error:", error);
       alert("Failed to book appointment. Please try again.");
@@ -121,19 +138,21 @@ export default function BookNursePage() {
     return null;
   }
 
-  const filteredNurses = selectedService 
-    ? mockNurses.filter(nurse => {
+  const filteredNurses = selectedService
+    ? nurses.filter(nurse => {
+        if (!nurse.isAvailable || !nurse.isVerified) return false;
+
         const serviceMap: { [key: string]: string[] } = {
-          "blood-pressure": ["Cardiac Care"],
-          "medication": ["Diabetes Management", "Cardiac Care"],
-          "wound-care": ["Wound Care"],
-          "diabetes-care": ["Diabetes Management"],
-          "general-checkup": ["Cardiac Care", "Diabetes Management"],
-          "post-surgery": ["Wound Care"]
+          "blood-pressure": ["CARDIOLOGY", "GENERAL"],
+          "medication": ["GENERAL", "CARDIOLOGY", "PEDIATRICS"],
+          "wound-care": ["GENERAL", "ORTHOPEDICS"],
+          "diabetes-care": ["GENERAL", "CARDIOLOGY"],
+          "general-checkup": ["GENERAL"],
+          "post-surgery": ["GENERAL", "ORTHOPEDICS"]
         };
-        return serviceMap[selectedService]?.includes(nurse.specialization);
+        return serviceMap[selectedService]?.includes(nurse.department);
       })
-    : mockNurses;
+    : nurses.filter(nurse => nurse.isAvailable && nurse.isVerified);
 
   return (
     <div className="w-full overflow-x-hidden">
@@ -211,8 +230,19 @@ export default function BookNursePage() {
               <CardDescription>Select from our qualified healthcare professionals</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {filteredNurses.map((nurse) => (
+              {loadingNurses ? (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-2">⏳</div>
+                  <p>Loading available nurses...</p>
+                </div>
+              ) : filteredNurses.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-2">👩‍⚕️</div>
+                  <p>No nurses available for this service at the moment.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredNurses.map((nurse) => (
                   <div
                     key={nurse.id}
                     onClick={() => setSelectedNurse(nurse.id)}
@@ -228,26 +258,32 @@ export default function BookNursePage() {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold">{nurse.name}</h3>
+                          <h3 className="font-semibold">{nurse.user.name}</h3>
+                          {nurse.isVerified && (
+                            <Badge variant="secondary" className="text-xs">Verified</Badge>
+                          )}
                           <div className="flex items-center gap-1">
                             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                             <span className="text-sm">{nurse.rating}</span>
-                            <span className="text-sm text-muted-foreground">({nurse.reviews})</span>
                           </div>
                         </div>
-                        <p className="text-sm text-muted-foreground mb-2">{nurse.specialization} • {nurse.experience}</p>
-                        <p className="text-sm mb-2">{nurse.bio}</p>
+                        <p className="text-sm text-muted-foreground mb-2">{nurse.department} • {nurse.experience}</p>
+                        <p className="text-sm mb-2">{nurse.bio || `Experienced ${nurse.department.toLowerCase()} nurse with professional healthcare experience.`}</p>
                         <div className="flex flex-wrap gap-1 mb-2">
-                          {nurse.certifications.map((cert) => (
-                            <Badge key={cert} variant="secondary" className="text-xs">{cert}</Badge>
+                          {nurse.specialties.map((specialty) => (
+                            <Badge key={specialty} variant="secondary" className="text-xs">{specialty}</Badge>
                           ))}
                         </div>
-                        <p className="text-sm font-semibold text-primary">PKR {nurse.hourlyRate}/hour</p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-semibold text-primary">PKR {nurse.hourlyRate}/hour</p>
+                          <p className="text-xs text-muted-foreground">{nurse.location}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 ))}
-              </div>
+                </div>
+              )}
               <div className="flex gap-4 mt-6">
                 <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
                 <Button 
@@ -341,7 +377,7 @@ export default function BookNursePage() {
                     </div>
                     <div className="flex justify-between">
                       <span>Nurse:</span>
-                      <span>{mockNurses.find(n => n.id === selectedNurse)?.name}</span>
+                      <span>{nurses.find(n => n.id === selectedNurse)?.user.name}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Date:</span>
@@ -351,9 +387,23 @@ export default function BookNursePage() {
                       <span>Time:</span>
                       <span>{selectedTime}</span>
                     </div>
+                    <div className="flex justify-between">
+                      <span>Duration:</span>
+                      <span>{serviceTypes.find(s => s.id === selectedService)?.duration}</span>
+                    </div>
                     <div className="flex justify-between font-semibold">
                       <span>Estimated Cost:</span>
-                      <span>PKR {mockNurses.find(n => n.id === selectedNurse)?.hourlyRate}</span>
+                      <span>PKR {(() => {
+                        const nurse = nurses.find(n => n.id === selectedNurse);
+                        const service = serviceTypes.find(s => s.id === selectedService);
+                        if (!nurse || !service) return 0;
+
+                        // Calculate cost based on duration
+                        const durationMinutes = parseInt(service.duration.split(' ')[0]);
+                        const hourlyRate = nurse.hourlyRate;
+                        const cost = (hourlyRate * durationMinutes) / 60;
+                        return Math.round(cost);
+                      })()}</span>
                     </div>
                   </div>
                 </div>
@@ -375,5 +425,13 @@ export default function BookNursePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function BookNursePage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <BookNurseContent />
+    </Suspense>
   );
 }

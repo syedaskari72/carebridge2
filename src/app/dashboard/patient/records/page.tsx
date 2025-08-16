@@ -6,222 +6,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 
-// Mock data - replace with real API calls
-const mockPatientRecords = {
-  personalInfo: {
-    name: "John Doe",
-    age: 45,
-    gender: "Male",
-    bloodType: "O+",
-    height: "5'10\"",
-    weight: "180 lbs",
-    allergies: ["Penicillin", "Shellfish", "Pollen"],
-    conditions: ["Hypertension", "Type 2 Diabetes"],
-    emergencyContact: {
-      name: "Jane Doe",
-      relationship: "Spouse",
-      phone: "+92 300 1234567"
-    },
-    insurance: {
-      provider: "Health Plus",
-      policyNumber: "HP-123456789",
-      groupNumber: "GRP-001"
-    }
-  },
-  prescriptions: [
-    {
-      id: "1",
-      medication: "Lisinopril 10mg",
-      frequency: "Once daily",
-      dosage: "10mg",
-      doctor: "Dr. Ahmed Khan",
-      startDate: "2024-07-01",
-      endDate: "2024-09-01",
-      status: "active",
-      remaining: "15 days",
-      instructions: "Take with food. Monitor blood pressure daily.",
-      sideEffects: ["Dizziness", "Dry cough"],
-      refillsRemaining: 2
-    },
-    {
-      id: "2",
-      medication: "Metformin 500mg",
-      frequency: "Twice daily",
-      dosage: "500mg",
-      doctor: "Dr. Sarah Ali",
-      startDate: "2024-06-15",
-      endDate: "2024-12-15",
-      status: "active",
-      remaining: "45 days",
-      instructions: "Take with meals. Check blood sugar regularly.",
-      sideEffects: ["Nausea", "Stomach upset"],
-      refillsRemaining: 5
-    },
-    {
-      id: "3",
-      medication: "Aspirin 81mg",
-      frequency: "Once daily",
-      dosage: "81mg",
-      doctor: "Dr. Ahmed Khan",
-      startDate: "2024-05-01",
-      endDate: "2025-05-01",
-      status: "active",
-      remaining: "90 days",
-      instructions: "Take with food to prevent stomach irritation.",
-      sideEffects: ["Stomach irritation"],
-      refillsRemaining: 8
-    }
-  ],
-  treatmentHistory: [
-    {
-      id: "1",
-      date: "2024-08-10",
-      type: "Blood Pressure Check",
-      nurse: "Sarah Johnson",
-      duration: "45 minutes",
-      vitals: {
-        bp: "120/80",
-        pulse: "72",
-        temp: "98.6°F",
-        weight: "179 lbs",
-        oxygen: "98%"
-      },
-      medications: ["Lisinopril 10mg administered"],
-      procedures: ["Blood pressure monitoring", "Medication administration"],
-      notes: "Blood pressure within normal range. Continue current medication. Patient reports feeling well.",
-      nextVisit: "2024-08-17",
-      status: "completed",
-      photos: ["bp_reading.jpg"],
-      nurseSignature: "Sarah Johnson, RN"
-    },
-    {
-      id: "2",
-      date: "2024-08-05",
-      type: "Blood Sugar Monitoring",
-      nurse: "Emily Davis",
-      duration: "30 minutes",
-      vitals: {
-        glucose: "110 mg/dL",
-        bp: "118/78",
-        pulse: "68",
-        temp: "98.4°F"
-      },
-      medications: ["Metformin 500mg administered"],
-      procedures: ["Blood glucose test", "Medication administration", "Diet counseling"],
-      notes: "Blood sugar levels stable. Diet and exercise plan working well. Patient adherent to medication schedule.",
-      nextVisit: "2024-08-12",
-      status: "completed",
-      photos: ["glucose_reading.jpg"],
-      nurseSignature: "Emily Davis, RN"
-    },
-    {
-      id: "3",
-      date: "2024-08-01",
-      type: "Wound Care",
-      nurse: "Maria Rodriguez",
-      duration: "60 minutes",
-      vitals: {
-        bp: "125/82",
-        pulse: "75",
-        temp: "98.8°F"
-      },
-      medications: ["Antibiotic ointment applied"],
-      procedures: ["Wound cleaning", "Dressing change", "Infection assessment"],
-      notes: "Wound healing well. No signs of infection. Continue current care routine.",
-      nextVisit: "2024-08-08",
-      status: "completed",
-      photos: ["wound_before.jpg", "wound_after.jpg"],
-      nurseSignature: "Maria Rodriguez, RN"
-    }
-  ],
-  consultations: [
-    {
-      id: "1",
-      date: "2024-08-08",
-      doctor: "Dr. Ahmed Khan",
-      type: "Follow-up",
-      diagnosis: "Hypertension - Well Controlled",
-      treatment: "Continue current medication regimen",
-      cost: 1500,
-      followUp: "2024-09-08",
-      duration: "30 minutes",
-      notes: "Patient responding well to treatment. Blood pressure stable.",
-      recommendations: ["Continue medication", "Regular exercise", "Low sodium diet"]
-    },
-    {
-      id: "2",
-      date: "2024-07-15",
-      doctor: "Dr. Sarah Ali",
-      type: "Initial Consultation",
-      diagnosis: "Type 2 Diabetes - Newly Diagnosed",
-      treatment: "Metformin therapy initiated",
-      cost: 2000,
-      followUp: "2024-08-15",
-      duration: "45 minutes",
-      notes: "Patient educated on diabetes management. Lifestyle modifications discussed.",
-      recommendations: ["Medication compliance", "Blood sugar monitoring", "Dietary changes"]
-    }
-  ],
-  medicalHistory: {
-    familyHistory: [
-      { condition: "Hypertension", relation: "Father", ageOfOnset: 55 },
-      { condition: "Diabetes Type 2", relation: "Mother", ageOfOnset: 62 },
-      { condition: "Heart Disease", relation: "Grandfather (Paternal)", ageOfOnset: 70 }
-    ],
-    pastSurgeries: [
-      { procedure: "Appendectomy", date: "2010-03-15", hospital: "City General Hospital" },
-      { procedure: "Gallbladder Removal", date: "2018-11-22", hospital: "Metro Medical Center" }
-    ],
-    hospitalizations: [
-      { reason: "Pneumonia", date: "2019-12-10", duration: "5 days", hospital: "City General Hospital" }
-    ],
-    immunizations: [
-      { vaccine: "COVID-19", date: "2024-01-15", nextDue: "2025-01-15" },
-      { vaccine: "Flu Shot", date: "2023-10-01", nextDue: "2024-10-01" },
-      { vaccine: "Tetanus", date: "2022-05-20", nextDue: "2032-05-20" }
-    ]
-  },
-  trackingSystem: {
-    reminders: [
-      { id: "1", type: "Medication", description: "Take Lisinopril", time: "08:00", frequency: "Daily", active: true },
-      { id: "2", type: "Medication", description: "Take Metformin", time: "08:00,20:00", frequency: "Twice Daily", active: true },
-      { id: "3", type: "Appointment", description: "Blood Pressure Check", date: "2024-08-17", active: true },
-      { id: "4", type: "Test", description: "Blood Sugar Test", frequency: "Weekly", active: true }
-    ],
-    nurseUpdates: [
-      { date: "2024-08-10", nurse: "Sarah Johnson", update: "Blood pressure checked - normal range", type: "Vital Signs" },
-      { date: "2024-08-05", nurse: "Emily Davis", update: "Blood sugar monitoring completed", type: "Lab Work" },
-      { date: "2024-08-01", nurse: "Maria Rodriguez", update: "Wound care performed - healing well", type: "Treatment" }
-    ],
-    progressTracking: {
-      bloodPressure: [
-        { date: "2024-08-10", systolic: 120, diastolic: 80, notes: "Normal" },
-        { date: "2024-08-05", systolic: 118, diastolic: 78, notes: "Excellent" },
-        { date: "2024-08-01", systolic: 125, diastolic: 82, notes: "Slightly elevated" }
-      ],
-      bloodSugar: [
-        { date: "2024-08-10", value: 110, unit: "mg/dL", notes: "Fasting" },
-        { date: "2024-08-05", value: 140, unit: "mg/dL", notes: "Post-meal" },
-        { date: "2024-08-01", value: 105, unit: "mg/dL", notes: "Fasting" }
-      ],
-      weight: [
-        { date: "2024-08-10", value: 179, unit: "lbs", notes: "Stable" },
-        { date: "2024-08-01", value: 180, unit: "lbs", notes: "Slight decrease" },
-        { date: "2024-07-15", value: 182, unit: "lbs", notes: "Baseline" }
-      ]
-    }
-  }
-};
+
 
 export default function PatientRecordsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [records, setRecords] = useState(mockPatientRecords);
+  const [records, setRecords] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
     if (status === "loading") return;
-    
+
     if (!session) {
       router.push("/auth/signin");
       return;
@@ -232,6 +27,26 @@ export default function PatientRecordsPage() {
       return;
     }
   }, [session, status, router]);
+
+  // Load dynamic records
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch('/api/patient/records');
+        if (res.ok) {
+          const data = await res.json();
+          setRecords(data);
+        }
+      } catch (e) {
+        console.error('Failed to load patient records', e);
+      }
+    };
+    if (session && session.user.userType === 'PATIENT') load();
+  }, [session]);
+
+  if (!records) {
+    return <div className="flex items-center justify-center min-h-screen">Loading records...</div>;
+  }
 
   if (status === "loading") {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -309,7 +124,7 @@ export default function PatientRecordsPage() {
           <div className="card">
             <h2 className="text-xl font-semibold mb-4">Medical Conditions</h2>
             <div className="space-y-2">
-              {records.personalInfo.conditions.map((condition, index) => (
+              {records.personalInfo.conditions.map((condition: string, index: number) => (
                 <span
                   key={index}
                   className="inline-block bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm mr-2 mb-2"
@@ -323,7 +138,7 @@ export default function PatientRecordsPage() {
           <div className="card">
             <h2 className="text-xl font-semibold mb-4">Allergies</h2>
             <div className="space-y-2">
-              {records.personalInfo.allergies.map((allergy, index) => (
+              {records.personalInfo.allergies.map((allergy: string, index: number) => (
                 <span
                   key={index}
                   className="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm mr-2 mb-2"
@@ -357,7 +172,7 @@ export default function PatientRecordsPage() {
           <div className="card">
             <h2 className="text-xl font-semibold mb-4">Family History</h2>
             <div className="space-y-3">
-              {records.medicalHistory.familyHistory.map((item, index) => (
+              {records.medicalHistory.familyHistory.map((item: any, index: number) => (
                 <div key={index} className="flex justify-between items-center p-3 border rounded-lg">
                   <div>
                     <span className="font-medium">{item.condition}</span>
@@ -373,7 +188,7 @@ export default function PatientRecordsPage() {
           <div className="card">
             <h2 className="text-xl font-semibold mb-4">Past Surgeries</h2>
             <div className="space-y-3">
-              {records.medicalHistory.pastSurgeries.map((surgery, index) => (
+              {records.medicalHistory.pastSurgeries.map((surgery: any, index: number) => (
                 <div key={index} className="border rounded-lg p-4">
                   <h3 className="font-semibold">{surgery.procedure}</h3>
                   <p className="text-sm text-muted-foreground">
@@ -388,7 +203,7 @@ export default function PatientRecordsPage() {
           <div className="card">
             <h2 className="text-xl font-semibold mb-4">Immunizations</h2>
             <div className="space-y-3">
-              {records.medicalHistory.immunizations.map((vaccine, index) => (
+              {records.medicalHistory.immunizations.map((vaccine: any, index: number) => (
                 <div key={index} className="flex justify-between items-center p-3 border rounded-lg">
                   <div>
                     <span className="font-medium">{vaccine.vaccine}</span>
@@ -409,7 +224,7 @@ export default function PatientRecordsPage() {
       {/* Prescriptions Tab */}
       {activeTab === "prescriptions" && (
         <div className="space-y-6">
-          {records.prescriptions.map((prescription) => (
+          {records.prescriptions.map((prescription: any) => (
             <div key={prescription.id} className="card">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -418,14 +233,14 @@ export default function PatientRecordsPage() {
                   <p className="text-sm text-slate-500">Prescribed by {prescription.doctor}</p>
                 </div>
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  prescription.status === "active" 
+                  prescription.status === "active"
                     ? "bg-green-100 text-green-800"
                     : "bg-gray-100 text-gray-800"
                 }`}>
                   {prescription.status}
                 </span>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div>
                   <span className="text-slate-600">Start Date:</span>
@@ -436,6 +251,8 @@ export default function PatientRecordsPage() {
                   <p className="font-medium">{new Date(prescription.endDate).toLocaleDateString()}</p>
                 </div>
                 <div>
+
+
                   <span className="text-slate-600">Remaining:</span>
                   <p className="font-medium text-orange-600">{prescription.remaining}</p>
                 </div>
@@ -448,7 +265,7 @@ export default function PatientRecordsPage() {
       {/* Treatment History Tab */}
       {activeTab === "treatments" && (
         <div className="space-y-6">
-          {records.treatmentHistory.map((treatment) => (
+          {records.treatmentHistory.map((treatment: any) => (
             <div key={treatment.id} className="card">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -463,7 +280,7 @@ export default function PatientRecordsPage() {
                   </div>
                 )}
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h4 className="font-medium mb-2">Vitals</h4>
@@ -471,12 +288,12 @@ export default function PatientRecordsPage() {
                     {Object.entries(treatment.vitals).map(([key, value]) => (
                       <div key={key} className="flex justify-between">
                         <span className="text-slate-600 capitalize">{key}:</span>
-                        <span className="font-medium">{value}</span>
+                        <span className="font-medium">{String(value)}</span>
                       </div>
                     ))}
                   </div>
                 </div>
-                
+
                 <div>
                   <h4 className="font-medium mb-2">Notes</h4>
                   <p className="text-sm text-slate-600">{treatment.notes}</p>
@@ -490,7 +307,7 @@ export default function PatientRecordsPage() {
       {/* Consultations Tab */}
       {activeTab === "consultations" && (
         <div className="space-y-6">
-          {records.consultations.map((consultation) => (
+          {records.consultations.map((consultation: any) => (
             <div key={consultation.id} className="card">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -499,23 +316,23 @@ export default function PatientRecordsPage() {
                   <p className="text-sm text-slate-500">{new Date(consultation.date).toLocaleDateString()}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold text-green-600">₹{consultation.cost}</p>
+                  <p className="text-lg font-bold text-green-600">PKR {consultation.cost}</p>
                   <p className="text-sm text-slate-500">Consultation Fee</p>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h4 className="font-medium mb-2">Diagnosis</h4>
                   <p className="text-sm text-slate-600">{consultation.diagnosis}</p>
                 </div>
-                
+
                 <div>
                   <h4 className="font-medium mb-2">Treatment Plan</h4>
                   <p className="text-sm text-slate-600">{consultation.treatment}</p>
                 </div>
               </div>
-              
+
               {consultation.followUp && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <p className="text-sm text-slate-600">
@@ -535,7 +352,7 @@ export default function PatientRecordsPage() {
           <div className="card">
             <h2 className="text-xl font-semibold mb-4">Active Reminders</h2>
             <div className="space-y-3">
-              {records.trackingSystem.reminders.filter(r => r.active).map((reminder) => (
+              {records.trackingSystem.reminders.filter((r: any) => r.active).map((reminder: any) => (
                 <div key={reminder.id} className="flex justify-between items-center p-3 border rounded-lg">
                   <div>
                     <span className="font-medium">{reminder.description}</span>
@@ -556,7 +373,7 @@ export default function PatientRecordsPage() {
           <div className="card">
             <h2 className="text-xl font-semibold mb-4">Recent Nurse Updates</h2>
             <div className="space-y-3">
-              {records.trackingSystem.nurseUpdates.map((update, index) => (
+              {records.trackingSystem.nurseUpdates.map((update: any, index: number) => (
                 <div key={index} className="border rounded-lg p-4">
                   <div className="flex justify-between items-start mb-2">
                     <span className="font-medium">{update.nurse}</span>
@@ -577,7 +394,7 @@ export default function PatientRecordsPage() {
             <div className="card">
               <h3 className="font-semibold mb-4">Blood Pressure</h3>
               <div className="space-y-2">
-                {records.trackingSystem.progressTracking.bloodPressure.slice(0, 3).map((reading, index) => (
+                {records.trackingSystem.progressTracking.bloodPressure.slice(0, 3).map((reading: any, index: number) => (
                   <div key={index} className="flex justify-between text-sm">
                     <span>{new Date(reading.date).toLocaleDateString()}</span>
                     <span className="font-medium">{reading.systolic}/{reading.diastolic}</span>
@@ -590,7 +407,7 @@ export default function PatientRecordsPage() {
             <div className="card">
               <h3 className="font-semibold mb-4">Blood Sugar</h3>
               <div className="space-y-2">
-                {records.trackingSystem.progressTracking.bloodSugar.slice(0, 3).map((reading, index) => (
+                {records.trackingSystem.progressTracking.bloodSugar.slice(0, 3).map((reading: any, index: number) => (
                   <div key={index} className="flex justify-between text-sm">
                     <span>{new Date(reading.date).toLocaleDateString()}</span>
                     <span className="font-medium">{reading.value} {reading.unit}</span>
@@ -603,7 +420,7 @@ export default function PatientRecordsPage() {
             <div className="card">
               <h3 className="font-semibold mb-4">Weight</h3>
               <div className="space-y-2">
-                {records.trackingSystem.progressTracking.weight.slice(0, 3).map((reading, index) => (
+                {records.trackingSystem.progressTracking.weight.slice(0, 3).map((reading: any, index: number) => (
                   <div key={index} className="flex justify-between text-sm">
                     <span>{new Date(reading.date).toLocaleDateString()}</span>
                     <span className="font-medium">{reading.value} {reading.unit}</span>

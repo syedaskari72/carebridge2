@@ -52,7 +52,7 @@
     {
       "name": "Book a Nurse",
       "short_name": "Book Nurse",
-      "url": "/book?source=shortcuts"
+      "url": "/book/nurse"
     },
     {
       "name": "My Bookings",

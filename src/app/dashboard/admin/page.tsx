@@ -446,7 +446,7 @@ export default function AdminDashboard() {
           </Card>
         </TabsContent>
 
-        {/* Nurse Verification Tab - Will be added in next part */}
+        {/* Nurse Verification Tab */}
         <TabsContent value="verifications">
           <Card>
             <CardHeader>
@@ -456,7 +456,93 @@ export default function AdminDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p>Nurse verification content will be implemented here...</p>
+              {/* Nurses awaiting verification */}
+              <div className="space-y-4">
+                {users.filter(user => user.userType === 'NURSE' && user.nurse && !user.nurse.isVerified).map((user) => (
+                  <Card key={user.id} className="border-l-4 border-l-yellow-400">
+                    <CardContent className="p-4">
+                      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg">{user.name}</h3>
+                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                          <div className="mt-2 space-y-1">
+                            <p className="text-sm"><strong>Department:</strong> {user.nurse?.department}</p>
+                            <p className="text-sm"><strong>License:</strong> {user.nurse?.licenseNumber}</p>
+                            <p className="text-sm"><strong>Joined:</strong> {new Date(user.createdAt).toLocaleDateString()}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2 min-w-[200px]">
+                          <div className="text-sm text-muted-foreground">
+                            Documents: {user.nurse?.documents?.length || 0} uploaded
+                          </div>
+
+                          {/* Document verification status */}
+                          {user.nurse?.documents && user.nurse.documents.length > 0 && (
+                            <div className="space-y-1">
+                              {user.nurse.documents.map((doc) => (
+                                <div key={doc.id} className="flex items-center justify-between text-xs">
+                                  <span>{doc.type}</span>
+                                  <div className="flex gap-1">
+                                    {doc.isVerified ? (
+                                      <Badge variant="default" className="text-xs">Verified</Badge>
+                                    ) : (
+                                      <div className="flex gap-1">
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="h-6 px-2 text-xs"
+                                          onClick={() => handleVerifyDocument(doc.id, 'approve')}
+                                        >
+                                          <CheckCircle className="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="h-6 px-2 text-xs"
+                                          onClick={() => handleVerifyDocument(doc.id, 'reject')}
+                                        >
+                                          <XCircle className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Nurse verification actions */}
+                          <div className="flex gap-2 mt-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleVerifyNurse(user.nurse!.id, 'approve')}
+                              className="flex-1"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Verify Nurse
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleVerifyNurse(user.nurse!.id, 'reject')}
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {users.filter(user => user.userType === 'NURSE' && user.nurse && !user.nurse.isVerified).length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <UserCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No nurses pending verification</p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

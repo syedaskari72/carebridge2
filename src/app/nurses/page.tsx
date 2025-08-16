@@ -1,76 +1,60 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-// Mock data - replace with real API calls
-const mockNurses = [
-  {
-    id: "1",
-    name: "Sarah Johnson",
-    rating: 4.9,
-    reviews: 127,
-    specialties: ["General Care", "Elderly Care", "Medication Management"],
-    availability: "Available Now",
-    hourlyRate: 45,
-    experience: "8 years",
-    location: "Downtown Area",
-    profileImage: "👩‍⚕️"
-  },
-  {
-    id: "2", 
-    name: "Emily Davis",
-    rating: 4.8,
-    reviews: 89,
-    specialties: ["Pediatric Care", "Wound Care", "Post-Surgery Care"],
-    availability: "Available Today",
-    hourlyRate: 50,
-    experience: "6 years", 
-    location: "Midtown",
-    profileImage: "👩‍⚕️"
-  },
-  {
-    id: "3",
-    name: "Maria Rodriguez", 
-    rating: 4.9,
-    reviews: 156,
-    specialties: ["Chronic Disease Management", "Diabetes Care", "Blood Pressure Monitoring"],
-    availability: "Available Tomorrow",
-    hourlyRate: 48,
-    experience: "10 years",
-    location: "Uptown",
-    profileImage: "👩‍⚕️"
-  }
-];
+interface Nurse {
+  id: string;
+  user: { name: string };
+  department?: string;
+  isVerified?: boolean;
+  isAvailable?: boolean;
+  hourlyRate?: number;
+  location?: string;
+  specialties?: string[];
+}
+
+
 
 export default function NursesPage() {
-  const [nurses] = useState(mockNurses);
+  const [nurses, setNurses] = useState<Nurse[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [specialtyFilter, setSpecialtyFilter] = useState("");
 
-  const allSpecialties = Array.from(
-    new Set(nurses.flatMap(nurse => nurse.specialties))
-  );
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch(`/api/nurses?q=${encodeURIComponent(searchTerm)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setNurses(data);
+        }
+      } catch (e) {
+        console.error("Failed to load nurses", e);
+      }
+    };
+    load();
+  }, [searchTerm]);
+
+  const allSpecialties = Array.from(new Set(nurses.map(n => n.department).filter(Boolean) as string[]));
 
   const filteredNurses = nurses.filter(nurse => {
-    const matchesSearch = nurse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         nurse.specialties.some(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesSpecialty = !specialtyFilter || nurse.specialties.includes(specialtyFilter);
+    const name = (nurse.user?.name || "").toLowerCase();
+    const matchesSearch = name.includes(searchTerm.toLowerCase());
+    const matchesSpecialty = !specialtyFilter || nurse.department === specialtyFilter;
     return matchesSearch && matchesSpecialty;
   });
 
   const handleBookNurse = (nurseId: string) => {
-    // TODO: Implement booking logic with pre-selected nurse
-    console.log("Book nurse:", nurseId);
+    window.location.href = `/book/nurse?nurse=${encodeURIComponent(nurseId)}`;
   };
 
   const handleViewProfile = (nurseId: string) => {
-    // TODO: Navigate to nurse profile page
-    console.log("View profile:", nurseId);
+    window.location.href = `/nurses/${encodeURIComponent(nurseId)}`;
   };
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-slate-900 mb-8">Find Nurses</h1>
+      <h1 className="text-3xl font-bold text-foreground mb-8">Find Nurses</h1>
       
       {/* Search and Filters */}
       <div className="card mb-8">
@@ -113,9 +97,14 @@ export default function NursesPage() {
           {filteredNurses.map((nurse) => (
             <div key={nurse.id} className="card hover:shadow-lg transition-shadow">
               <div className="text-center mb-4">
-                <div className="text-6xl mb-2">{nurse.profileImage}</div>
-                <h3 className="text-xl font-semibold">{nurse.name}</h3>
-                <p className="text-slate-600">{nurse.experience} experience</p>
+                <div className="text-6xl mb-2">👩‍⚕️</div>
+                <h3 className="text-xl font-semibold flex items-center gap-2">
+                  {nurse.user?.name}
+                  {nurse.isVerified && (
+                    <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700 border border-green-200">Verified</span>
+                  )}
+                </h3>
+                <p className="text-muted-foreground">{nurse.department || "General"}</p>
               </div>
 
               <div className="space-y-3 mb-6">
@@ -123,31 +112,31 @@ export default function NursesPage() {
                   <span className="text-sm text-slate-600">Rating:</span>
                   <div className="flex items-center">
                     <span className="text-yellow-500">★</span>
-                    <span className="ml-1 font-medium">{nurse.rating}</span>
-                    <span className="text-slate-500 text-sm ml-1">({nurse.reviews})</span>
+                    <span className="ml-1 font-medium">{(nurse as any).rating ?? "4.8"}</span>
+                    <span className="text-slate-500 text-sm ml-1">({(nurse as any).reviews ?? "120"})</span>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">Rate:</span>
-                  <span className="font-medium">${nurse.hourlyRate}/hour</span>
+                  <span className="font-medium">PKR {(nurse as any).hourlyRate ?? 2500}/hour</span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">Location:</span>
-                  <span className="text-sm">{nurse.location}</span>
+                  <span className="text-sm">{(nurse as any).location ?? "City"}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">Status:</span>
-                  <span className="text-sm text-green-600 font-medium">{nurse.availability}</span>
+                  <span className="text-sm text-green-600 font-medium">{(nurse as any).availability ?? ((nurse as any).isAvailable ? "Available" : "Unavailable")}</span>
                 </div>
               </div>
 
               <div className="mb-4">
                 <h4 className="text-sm font-medium mb-2">Specialties:</h4>
                 <div className="flex flex-wrap gap-1">
-                  {nurse.specialties.map((specialty) => (
+                  {((nurse as any).specialties ?? [nurse.department || "General"]).map((specialty: string) => (
                     <span
                       key={specialty}
                       className="px-2 py-1 bg-cyan-100 text-cyan-800 text-xs rounded-full"
@@ -161,15 +150,16 @@ export default function NursesPage() {
               <div className="flex gap-2">
                 <button
                   onClick={() => handleViewProfile(nurse.id)}
-                  className="flex-1 px-4 py-2 border border-cyan-600 text-cyan-600 rounded-lg hover:bg-cyan-50"
+                  className="flex-1 px-4 py-2 border border-primary text-primary rounded-lg hover:bg-primary/10 transition-colors"
                 >
                   View Profile
                 </button>
                 <button
                   onClick={() => handleBookNurse(nurse.id)}
-                  className="flex-1 button-primary"
+                  className="flex-1 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors hover:shadow-lg cursor-pointer font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={nurse.isAvailable === false}
                 >
-                  Book Now
+                  {nurse.isAvailable === false ? "Unavailable" : "Book Now"}
                 </button>
               </div>
             </div>

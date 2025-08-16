@@ -124,23 +124,28 @@ export async function GET(request: NextRequest) {
       take: 5
     });
 
-    // Get medications (mock for now - can be extended)
-    const medications = [
-      {
-        id: "1",
-        name: "Lisinopril 10mg",
-        frequency: "Once daily",
-        nextDose: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours from now
-        remaining: 15
-      },
-      {
-        id: "2",
-        name: "Metformin 500mg",
-        frequency: "Twice daily",
-        nextDose: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(), // 6 hours from now
-        remaining: 30
-      }
-    ];
+    // Medications schedule - if you track per-patient medication reminders, fetch here
+    const medications: any[] = [];
+
+    // Active prescriptions from database
+    const prescriptions = await prisma.prescription.findMany({
+      where: { patientId: patient.id, isActive: true },
+      include: { doctor: { include: { user: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 10
+    });
+
+    const activePrescriptions = prescriptions.map(p => {
+      const meds = (p.medications as any[]) || [];
+      const first = meds[0] || {};
+      return {
+        id: p.id,
+        medication: first.name || 'Prescription',
+        frequency: first.frequency || 'As directed',
+        doctor: p.doctor.user.name,
+        remaining: '—'
+      };
+    });
 
     // Calculate stats
     const totalBookings = await prisma.booking.count({
@@ -148,7 +153,7 @@ export async function GET(request: NextRequest) {
     });
 
     const completedBookings = await prisma.booking.count({
-      where: { 
+      where: {
         patientId: patient.id,
         status: 'COMPLETED'
       }
@@ -165,6 +170,36 @@ export async function GET(request: NextRequest) {
         amount: true
       }
     });
+
+    // Recommended nurses based on patient conditions -> departments
+    const conditions = patient.medicalConditions || [];
+    const deptFromConditions = new Set<string>();
+    for (const c of conditions) {
+      const lc = c.toLowerCase();
+      if (lc.includes('hypertension') || lc.includes('cardiac') || lc.includes('heart')) deptFromConditions.add('CARDIOLOGY');
+      if (lc.includes('diabetes') || lc.includes('sugar')) deptFromConditions.add('GENERAL');
+      if (lc.includes('wound') || lc.includes('fracture') || lc.includes('orthopedic')) deptFromConditions.add('ORTHOPEDICS');
+      if (lc.includes('child') || lc.includes('pediatric')) deptFromConditions.add('PEDIATRICS');
+    }
+    if (deptFromConditions.size === 0) deptFromConditions.add('GENERAL');
+
+    const recommended = await prisma.nurse.findMany({
+      where: {
+        isAvailable: true,
+        isVerified: true,
+        department: { in: Array.from(deptFromConditions) as any }
+      },
+      include: { user: true },
+      take: 6
+    });
+
+    const recommendedNurses = recommended.map(n => ({
+      id: n.id,
+      name: n.user.name,
+      department: n.department,
+      isAvailable: n.isAvailable,
+      hourlyRate: n.hourlyRate,
+    }));
 
     const dashboardData = {
       patient: {
@@ -199,22 +234,8 @@ export async function GET(request: NextRequest) {
         notes: booking.treatmentLogs?.[0]?.notes || 'No notes available'
       })),
       medications,
-      activePrescriptions: [
-        {
-          id: "1",
-          medication: "Lisinopril 10mg",
-          frequency: "Once daily",
-          doctor: "Dr. Smith",
-          remaining: "15 days"
-        },
-        {
-          id: "2",
-          medication: "Metformin 500mg",
-          frequency: "Twice daily",
-          doctor: "Dr. Johnson",
-          remaining: "45 days"
-        }
-      ]
+      activePrescriptions,
+      recommendedNurses
     };
 
     return NextResponse.json(dashboardData);

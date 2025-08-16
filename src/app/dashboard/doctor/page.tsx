@@ -319,7 +319,7 @@ export default function DoctorDashboard() {
           <p className="text-sm text-slate-600">Emergencies</p>
         </div>
         <div className="card text-center">
-          <div className="text-2xl font-bold text-purple-600">₹{doctorData.todayStats.earnings}</div>
+          <div className="text-2xl font-bold text-purple-600">PKR {doctorData.todayStats.earnings}</div>
           <p className="text-sm text-slate-600">Earnings</p>
         </div>
       </div>
@@ -348,7 +348,7 @@ export default function DoctorDashboard() {
                       <h3 className="font-semibold">{case_.patientName}</h3>
                       <p className="text-sm text-slate-600">Age: {case_.age} • {case_.condition}</p>
                       <p className="text-sm text-slate-500">Service: {case_.requestedService}</p>
-                      <p className="text-sm text-green-600 font-medium">Estimated: ₹{case_.estimatedCost}</p>
+                      <p className="text-sm text-green-600 font-medium">Estimated: PKR {case_.estimatedCost}</p>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                       case_.urgency === "urgent" 

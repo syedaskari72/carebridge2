@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function BookPage() {
+  const router = useRouter();
   const [serviceType, setServiceType] = useState("");
   const [urgency, setUrgency] = useState("");
   const [date, setDate] = useState("");
@@ -10,8 +12,18 @@ export default function BookPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement booking logic
-    console.log("Booking:", { serviceType, urgency, date, time });
+
+    // Redirect to appropriate booking flow based on service type
+    if (serviceType === "nurse") {
+      router.push("/book/nurse");
+    } else if (serviceType === "lab") {
+      router.push("/book/lab");
+    } else if (serviceType === "doctor") {
+      router.push("/book/doctor");
+    } else {
+      // Default to nurse booking if no service type selected
+      router.push("/book/nurse");
+    }
   };
 
   return (
@@ -123,10 +135,13 @@ export default function BookPage() {
         {/* Submit */}
         <button
           type="submit"
-          disabled={!serviceType || !urgency || !date || !time}
+          disabled={!serviceType}
           className="w-full button-primary py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Book Service
+          {serviceType === "nurse" ? "Continue to Nurse Booking" :
+           serviceType === "lab" ? "Continue to Lab Booking" :
+           serviceType === "doctor" ? "Continue to Doctor Booking" :
+           "Select Service to Continue"}
         </button>
       </form>
     </div>

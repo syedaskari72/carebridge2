@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 // Mock user data - replace with real user management
 const mockUser = {
@@ -31,30 +33,150 @@ const mockUser = {
 };
 
 export default function ProfilePage() {
-  const [user, setUser] = useState(mockUser);
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [realUser, setRealUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
 
-  const handleSave = () => {
-    // TODO: Implement save user profile logic
-    console.log("Save user profile:", user);
-    setIsEditing(false);
+  useEffect(() => {
+    if (status === "loading") return;
+
+    if (!session) {
+      router.push("/auth/signin");
+      return;
+    }
+
+    loadUserProfile();
+  }, [session, status, router]);
+
+  const loadUserProfile = async () => {
+    try {
+      const res = await fetch("/api/profile");
+      if (res.ok) {
+        const data = await res.json();
+        setRealUser(data);
+        // Update the user state with real data
+        const userData = {
+          id: data.id,
+          name: data.name || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          address: data.address || "",
+          emergencyContact: {
+            name: data.patient?.emergencyContactName || "",
+            phone: data.patient?.emergencyContactPhone || "",
+            relationship: data.patient?.emergencyContactRelationship || ""
+          },
+          medicalInfo: {
+            allergies: data.patient?.allergies || [],
+            medications: data.patient?.medications || [],
+            conditions: data.patient?.medicalConditions || [],
+            bloodType: data.patient?.bloodType || ""
+          },
+          preferences: {
+            preferredLanguage: data.patient?.preferredLanguage || "English",
+            notifications: data.patient?.notifications || {
+              email: true,
+              sms: true,
+              push: true
+            }
+          }
+        };
+        setUser(userData);
+        console.log("Loaded user data:", userData); // Debug log
+      } else {
+        console.error("Failed to load profile:", res.status);
+      }
+    } catch (e) {
+      console.error("Error loading profile:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      const payload = {
+        name: user.name,
+        phone: user.phone,
+        address: user.address,
+        // Patient-specific fields
+        bloodType: user.medicalInfo.bloodType,
+        allergies: user.medicalInfo.allergies,
+        medications: user.medicalInfo.medications,
+        medicalConditions: user.medicalInfo.conditions,
+        emergencyContactName: user.emergencyContact.name,
+        emergencyContactPhone: user.emergencyContact.phone,
+        emergencyContactRelationship: user.emergencyContact.relationship,
+        preferredLanguage: user.preferences.preferredLanguage,
+        notifications: user.preferences.notifications,
+      };
+
+      const res = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        alert("Profile updated successfully!");
+        setIsEditing(false);
+        loadUserProfile(); // Reload data
+      } else {
+        alert("Failed to update profile");
+      }
+    } catch (e) {
+      console.error("Error saving profile:", e);
+      alert("Failed to update profile");
+    }
   };
 
   const handleCancel = () => {
-    // TODO: Reset to original user data
+    // Reset to original data without reloading from API
+    if (realUser) {
+      const userData = {
+        id: realUser.id,
+        name: realUser.name || "",
+        email: realUser.email || "",
+        phone: realUser.phone || "",
+        address: realUser.address || "",
+        emergencyContact: {
+          name: realUser.patient?.emergencyContactName || "",
+          phone: realUser.patient?.emergencyContactPhone || "",
+          relationship: realUser.patient?.emergencyContactRelationship || ""
+        },
+        medicalInfo: {
+          allergies: realUser.patient?.allergies || [],
+          medications: realUser.patient?.medications || [],
+          conditions: realUser.patient?.medicalConditions || [],
+          bloodType: realUser.patient?.bloodType || ""
+        },
+        preferences: {
+          preferredLanguage: realUser.patient?.preferredLanguage || "English",
+          notifications: realUser.patient?.notifications || {
+            email: true,
+            sms: true,
+            push: true
+          }
+        }
+      };
+      setUser(userData);
+    }
     setIsEditing(false);
   };
 
   const updateUser = (field: string, value: any) => {
-    setUser(prev => ({
+    setUser((prev: any) => ({
       ...prev,
       [field]: value
     }));
   };
 
   const updateNestedUser = (section: string, field: string, value: any) => {
-    setUser(prev => {
+    setUser((prev: any) => {
       const currentSection = prev[section as keyof typeof prev];
       return {
         ...prev,
@@ -72,6 +194,21 @@ export default function ProfilePage() {
     { id: "emergency", label: "Emergency Contact", icon: "🚨" },
     { id: "preferences", label: "Preferences", icon: "⚙️" }
   ];
+
+  if (status === "loading" || loading || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-4xl mb-2">⏳</div>
+          <p>Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return null;
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -288,7 +425,7 @@ export default function ProfilePage() {
                   <label key={key} className="flex items-center">
                     <input
                       type="checkbox"
-                      checked={value}
+                      checked={Boolean(value)}
                       onChange={(e) => updateNestedUser("preferences", "notifications", {
                         ...user.preferences.notifications,
                         [key]: e.target.checked

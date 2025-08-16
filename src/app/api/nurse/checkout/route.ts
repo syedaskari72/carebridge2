@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       where: { id: nurse.id },
       data: {
         isOnDuty: false,
+        isAvailable: false, // Make nurse unavailable for bookings when checking out
         lastCheckOut: new Date(timestamp),
         currentLocation: location,
       },

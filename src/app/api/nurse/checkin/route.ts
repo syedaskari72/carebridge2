@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       where: { id: nurse.id },
       data: {
         isOnDuty: true,
+        isAvailable: true, // Make nurse available for bookings when checking in
         lastCheckIn: new Date(timestamp),
         currentLocation: location,
       },

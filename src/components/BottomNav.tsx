@@ -9,7 +9,7 @@ export default function BottomNav() {
   const navItems = [
     { href: "/", icon: "🏠", label: "Home" },
     { href: "/nurses", icon: "👩‍⚕️", label: "Nurses" },
-    { href: "/book", icon: "📅", label: "Book" },
+    { href: "/book/nurse", icon: "📅", label: "Book" },
     { href: "/bookings", icon: "📋", label: "Bookings" },
     { href: "/assistant", icon: "🤖", label: "Assistant" },
   ];

@@ -55,8 +55,11 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Get today's appointments
-    const todaysAppointments = allBookings.filter(booking => {
+    // Filter active bookings (only confirmed or in-progress)
+    const activeBookings = allBookings.filter(b => b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS');
+
+    // Get today's assignments (only confirmed or in-progress)
+    const todaysAppointments = activeBookings.filter(booking => {
       const scheduledDate = new Date(booking.appointmentDate);
       return scheduledDate >= startOfDay && scheduledDate < endOfDay;
     });
@@ -70,13 +73,40 @@ export async function GET(request: NextRequest) {
 
     // Calculate earnings
     const completedBookings = allBookings.filter(booking => booking.status === 'COMPLETED');
+
+    // Service duration mapping for earnings calculation
+    const serviceDurations: { [key: string]: number } = {
+      "blood-pressure": 30,
+      "medication": 45,
+      "wound-care": 60,
+      "diabetes-care": 30,
+      "general-checkup": 45,
+      "post-surgery": 90
+    };
+
     const totalEarnings = completedBookings.reduce((sum, booking) => {
-      return sum + (booking.payment?.amount || 0);
+      // Use payment amount if available, otherwise calculate from hourly rate
+      if (booking.payment?.amount) {
+        return sum + booking.payment.amount;
+      } else {
+        const duration = serviceDurations[booking.serviceType] || 60;
+        const earnings = (nurse.hourlyRate * duration) / 60;
+        return sum + earnings;
+      }
     }, 0);
 
     const todaysEarnings = todaysAppointments
       .filter(booking => booking.status === 'COMPLETED')
-      .reduce((sum, booking) => sum + (booking.payment?.amount || 0), 0);
+      .reduce((sum, booking) => {
+        // Use payment amount if available, otherwise calculate from hourly rate
+        if (booking.payment?.amount) {
+          return sum + booking.payment.amount;
+        } else {
+          const duration = serviceDurations[booking.serviceType] || 60;
+          const earnings = (nurse.hourlyRate * duration) / 60;
+          return sum + earnings;
+        }
+      }, 0);
 
     // Get safety status (mock for now)
     const safetyStatus = {
@@ -90,10 +120,9 @@ export async function GET(request: NextRequest) {
     const stats = {
       todaysAppointments: todaysAppointments.length,
       completedToday: todaysAppointments.filter(b => b.status === 'COMPLETED').length,
-      totalActivePatients: allBookings.filter(b => b.status !== 'CANCELLED').length,
-      rating: 4.9, // Mock rating - can be calculated from reviews
-      completionRate: completedBookings.length > 0 ? 
-        Math.round((completedBookings.length / allBookings.length) * 100) : 0,
+      totalActivePatients: activeBookings.reduce((set, b) => set.add(b.patientId), new Set<string>()).size,
+      rating: nurse.rating || 0,
+      completionRate: allBookings.length > 0 ? Math.round((completedBookings.length / allBookings.length) * 100) : 0,
       earnings: totalEarnings
     };
 
@@ -116,7 +145,9 @@ export async function GET(request: NextRequest) {
         hourlyRate: nurse.hourlyRate,
         isVerified: nurse.isVerified,
         specialties: nurse.specialties,
-        location: nurse.location
+        location: nurse.location,
+        isOnDuty: nurse.isOnDuty,
+        isAvailable: nurse.isAvailable
       },
       stats,
       todayStats,

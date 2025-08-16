@@ -22,104 +22,7 @@ import {
   TrendingUp
 } from "lucide-react";
 
-// Mock data - replace with real API calls
-const mockPatientData = {
-  upcomingAppointments: [
-    {
-      id: "1",
-      type: "Blood Pressure Check",
-      provider: "Nurse Sarah Johnson",
-      date: "2024-08-12",
-      time: "14:00",
-      status: "confirmed",
-      location: "Home Visit"
-    },
-    {
-      id: "2",
-      type: "Medication Administration",
-      provider: "Nurse Emily Davis",
-      date: "2024-08-13",
-      time: "10:00",
-      status: "scheduled",
-      location: "Home Visit"
-    }
-  ],
-  recentTreatments: [
-    {
-      id: "1",
-      type: "Blood Pressure Monitoring",
-      date: "2024-08-10",
-      nurse: "Sarah Johnson",
-      status: "completed",
-      notes: "BP within normal range"
-    },
-    {
-      id: "2",
-      type: "Wound Care",
-      date: "2024-08-08",
-      nurse: "Maria Rodriguez",
-      status: "completed",
-      notes: "Healing well, no infection"
-    }
-  ],
-  vitals: {
-    bloodPressure: { value: "120/80", status: "normal", lastChecked: "2024-08-10" },
-    bloodSugar: { value: "110", unit: "mg/dL", status: "normal", lastChecked: "2024-08-10" },
-    weight: { value: "70", unit: "kg", status: "stable", lastChecked: "2024-08-08" },
-    temperature: { value: "98.6", unit: "°F", status: "normal", lastChecked: "2024-08-10" }
-  },
-  medications: [
-    {
-      id: "1",
-      name: "Lisinopril 10mg",
-      nextDose: "2024-08-12T20:00:00",
-      frequency: "Once daily",
-      remaining: "15 days"
-    },
-    {
-      id: "2",
-      name: "Metformin 500mg",
-      nextDose: "2024-08-12T08:00:00",
-      frequency: "Twice daily",
-      remaining: "45 days"
-    }
-  ],
-  activePrescriptions: [
-    {
-      id: "1",
-      medication: "Lisinopril 10mg",
-      frequency: "Once daily",
-      doctor: "Dr. Smith",
-      remaining: "15 days"
-    },
-    {
-      id: "2",
-      medication: "Metformin 500mg",
-      frequency: "Twice daily",
-      doctor: "Dr. Johnson",
-      remaining: "45 days"
-    }
-  ],
-  recommendations: [
-    {
-      id: "1",
-      type: "Nurse Recommendation",
-      title: "Specialized Cardiac Care",
-      description: "Based on your hypertension, we recommend Nurse Sarah Johnson who specializes in cardiac care.",
-      provider: "Sarah Johnson, RN",
-      rating: 4.9,
-      experience: "8 years cardiac care"
-    },
-    {
-      id: "2",
-      type: "Treatment Recommendation",
-      title: "Blood Pressure Monitoring",
-      description: "Weekly BP checks recommended for optimal management.",
-      frequency: "Weekly",
-      nextDue: "2024-08-19"
-    }
-  ]
-};
+
 
 export default function PatientDashboard() {
   const { data: session, status } = useSession();
@@ -392,29 +295,34 @@ export default function PatientDashboard() {
             </CardContent>
           </Card>
 
-          {/* Health Recommendations */}
+          {/* Dynamic Nurse Recommendations */}
           <Card>
             <CardHeader>
-              <CardTitle>Recommended for You</CardTitle>
+              <CardTitle>Recommended Nurses</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="border border-cyan-200 bg-cyan-50 dark:bg-cyan-950 rounded-lg p-4">
-                  <h3 className="font-medium text-cyan-900 dark:text-cyan-100">Cardiology Nurse</h3>
-                  <p className="text-sm text-cyan-700 dark:text-cyan-300">Based on your medical history</p>
-                  <Link href="/nurses?department=cardiology" className="text-cyan-600 hover:text-cyan-700 text-sm">
-                    View specialists →
-                  </Link>
+              {dashboardData.recommendedNurses?.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No recommendations at the moment.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {dashboardData.recommendedNurses.map((n: any) => (
+                    <div key={n.id} className="border rounded-lg p-4 flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium">{n.name}</h3>
+                        <p className="text-sm text-muted-foreground">{n.department}</p>
+                        <p className="text-sm">Rate: PKR {n.hourlyRate}/hour</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full border ${n.isAvailable ? 'text-green-700 bg-green-50 border-green-200' : 'text-slate-600 bg-slate-50 border-slate-200'}`}>
+                          {n.isAvailable ? 'Available' : 'Unavailable'}
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Link href={`/nurses/${n.id}`} className="text-sm text-cyan-600 hover:text-cyan-700">Profile</Link>
+                        <Link href={`/book/nurse?nurse=${n.id}`} className={`text-sm ${n.isAvailable ? 'text-green-600 hover:text-green-700' : 'text-slate-400 pointer-events-none'}`}>Book</Link>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-
-                <div className="border border-blue-200 bg-blue-50 dark:bg-blue-950 rounded-lg p-4">
-                  <h3 className="font-medium text-blue-900 dark:text-blue-100">Regular Health Checkup</h3>
-                  <p className="text-sm text-blue-700 dark:text-blue-300">It's been 3 months since your last checkup</p>
-                  <Link href="/book?type=checkup" className="text-blue-600 hover:text-blue-700 text-sm">
-                    Schedule now →
-                  </Link>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>

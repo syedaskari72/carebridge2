@@ -23,140 +23,17 @@ import {
   Heart
 } from "lucide-react";
 
-// Mock data - replace with real API calls
-const mockNurseData = {
-  assignedPatients: [
-    {
-      id: "1",
-      name: "Ahmed Hassan",
-      age: 65,
-      condition: "Hypertension",
-      nextVisit: "2024-08-12T10:00:00",
-      address: "DHA Phase 5, Karachi",
-      priority: "high",
-      treatmentPlan: "Blood pressure monitoring, medication administration",
-      lastVisit: "2024-08-08",
-      status: "active",
-      phone: "+92 300 1234567"
-    },
-    {
-      id: "2",
-      name: "Fatima Khan",
-      age: 58,
-      condition: "Diabetes Type 2",
-      nextVisit: "2024-08-12T14:00:00",
-      address: "Gulberg, Lahore",
-      priority: "medium",
-      treatmentPlan: "Blood sugar monitoring, insulin administration",
-      lastVisit: "2024-08-09",
-      status: "active",
-      phone: "+92 301 2345678"
-    },
-    {
-      id: "3",
-      name: "Mohammad Ali",
-      age: 72,
-      condition: "Post-surgery care",
-      nextVisit: "2024-08-13T09:00:00",
-      address: "F-7, Islamabad",
-      priority: "high",
-      treatmentPlan: "Wound care, mobility assistance",
-      lastVisit: "2024-08-10",
-      status: "active",
-      phone: "+92 302 3456789"
-    }
-  ],
-  todaysTasks: [
-    {
-      id: "1",
-      patientId: "1",
-      patientName: "Ahmed Hassan",
-      task: "Blood pressure measurement",
-      time: "10:00",
-      duration: "30 min",
-      status: "pending",
-      priority: "high"
-    },
-    {
-      id: "2",
-      patientId: "1",
-      patientName: "Ahmed Hassan",
-      task: "Medication administration - Lisinopril",
-      time: "10:15",
-      duration: "15 min",
-      status: "pending",
-      priority: "high"
-    },
-    {
-      id: "3",
-      patientId: "2",
-      patientName: "Fatima Khan",
-      task: "Blood sugar check",
-      time: "14:00",
-      duration: "20 min",
-      status: "pending",
-      priority: "medium"
-    }
-  ],
-  departmentRecommendations: [
-    {
-      id: "1",
-      patientName: "Sara Ahmed",
-      condition: "Cardiac rehabilitation",
-      location: "Clifton, Karachi",
-      matchScore: 95,
-      reason: "Matches your cardiac care specialization",
-      urgency: "high",
-      estimatedDuration: "6 weeks"
-    },
-    {
-      id: "2",
-      patientName: "Hassan Malik",
-      condition: "Hypertension management",
-      location: "DHA Phase 6, Karachi",
-      matchScore: 88,
-      reason: "Experience with blood pressure management",
-      urgency: "medium",
-      estimatedDuration: "3 months"
-    }
-  ],
-  safetyAlerts: [
-    {
-      id: "1",
-      type: "location",
-      message: "You're entering a high-traffic area. Please be cautious.",
-      timestamp: "2024-08-12T09:30:00",
-      severity: "medium"
-    }
-  ],
-  stats: {
-    todaysAppointments: 3,
-    completedToday: 1,
-    totalActivePatients: 8,
-    rating: 4.9,
-    completionRate: 98,
-    earnings: 3500
-  },
-  todayStats: {
-    totalPatients: 8,
-    completed: 1,
-    pending: 7,
-    earnings: 3500
-  },
-  safetyStatus: {
-    isOnDuty: false,
-    lastCheckIn: null as string | null,
-    lastCheckOut: null as string | null,
-    currentLocation: null
-  }
-};
+
 
 export default function NurseDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [nurseData, setNurseData] = useState(mockNurseData);
+  // Removed nurseData state - now using realNurseData from API
+  const [realNurseData, setRealNurseData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isOnDuty, setIsOnDuty] = useState(false);
+  const [isAvailable, setIsAvailable] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -187,8 +64,33 @@ export default function NurseDashboard() {
 
     // Update time every minute
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+
+    // Load real nurse dashboard data
+    loadNurseDashboardData();
+
     return () => clearInterval(timer);
   }, [session, status, router]);
+
+  const loadNurseDashboardData = async () => {
+    try {
+      const res = await fetch("/api/nurse/dashboard");
+      if (res.ok) {
+        const data = await res.json();
+        setRealNurseData(data);
+        // Set initial availability state from database
+        if (data.nurse) {
+          setIsOnDuty(data.nurse.isOnDuty || false);
+          setIsAvailable(data.nurse.isAvailable || false);
+        }
+      } else {
+        console.error("Failed to load nurse dashboard data");
+      }
+    } catch (e) {
+      console.error("Error loading nurse dashboard:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCheckIn = async () => {
     try {
@@ -203,14 +105,10 @@ export default function NurseDashboard() {
 
       if (response.ok) {
         setIsOnDuty(true);
-        setNurseData(prev => ({
-          ...prev,
-          safetyStatus: {
-            ...prev.safetyStatus,
-            isOnDuty: true,
-            lastCheckIn: new Date().toISOString(),
-          }
-        }));
+        setIsAvailable(true);
+        alert("Checked in successfully! You are now available for bookings.");
+        // Reload dashboard data to reflect changes
+        loadNurseDashboardData();
       }
     } catch (error) {
       console.error("Check-in error:", error);
@@ -230,13 +128,10 @@ export default function NurseDashboard() {
 
       if (response.ok) {
         setIsOnDuty(false);
-        setNurseData(prev => ({
-          ...prev,
-          safetyStatus: {
-            ...prev.safetyStatus,
-            isOnDuty: false,
-          }
-        }));
+        setIsAvailable(false);
+        alert("Checked out successfully! You are now unavailable for bookings.");
+        // Reload dashboard data to reflect changes
+        loadNurseDashboardData();
       }
     } catch (error) {
       console.error("Check-out error:", error);
@@ -280,11 +175,19 @@ export default function NurseDashboard() {
     <div className="w-full overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-            Welcome, Nurse {session.user.name}
-          </h1>
-          <p className="text-muted-foreground">Your nursing dashboard</p>
+        <div className="mb-6 sm:mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+              Welcome, Nurse {session.user.name}
+            </h1>
+            <p className="text-muted-foreground">Your nursing dashboard</p>
+          </div>
+          <Link href="/dashboard/nurse/profile">
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Profile Settings
+            </Button>
+          </Link>
         </div>
 
         {/* Quick Actions */}
@@ -298,7 +201,7 @@ export default function NurseDashboard() {
             }`}
             size="lg"
           >
-            {isOnDuty ? "🏁 Check Out" : "▶️ Check In"}
+            {isOnDuty ? "🏁 Check Out (Available)" : "▶️ Check In (Unavailable)"}
           </Button>
           <Button
             onClick={handleSOS}
@@ -314,28 +217,28 @@ export default function NurseDashboard() {
           <Card>
             <CardContent className="p-4 text-center">
               <Users className="h-8 w-8 mx-auto mb-2 text-primary" />
-              <p className="text-2xl font-bold">{mockNurseData.stats.totalActivePatients}</p>
+              <p className="text-2xl font-bold">{realNurseData?.stats?.totalActivePatients || 0}</p>
               <p className="text-sm text-muted-foreground">Active Patients</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
               <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
-              <p className="text-2xl font-bold">{mockNurseData.stats.completedToday}</p>
+              <p className="text-2xl font-bold">{realNurseData?.stats?.completedToday || 0}</p>
               <p className="text-sm text-muted-foreground">Completed Today</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
               <Heart className="h-8 w-8 mx-auto mb-2 text-red-500" />
-              <p className="text-2xl font-bold">{mockNurseData.stats.rating}</p>
+              <p className="text-2xl font-bold">{realNurseData?.stats?.rating || 0}</p>
               <p className="text-sm text-muted-foreground">Rating</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
               <TrendingUp className="h-8 w-8 mx-auto mb-2 text-blue-500" />
-              <p className="text-2xl font-bold">PKR {mockNurseData.stats.earnings}</p>
+              <p className="text-2xl font-bold">PKR {realNurseData?.todayStats?.earnings || 0}</p>
               <p className="text-sm text-muted-foreground">Today's Earnings</p>
             </CardContent>
           </Card>
@@ -371,25 +274,7 @@ export default function NurseDashboard() {
         </div>
       </div>
 
-      {/* Today's Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="card text-center">
-          <div className="text-2xl font-bold text-cyan-600">{nurseData.todayStats.totalPatients}</div>
-          <p className="text-sm text-slate-600">Total Patients</p>
-        </div>
-        <div className="card text-center">
-          <div className="text-2xl font-bold text-green-600">{nurseData.todayStats.completed}</div>
-          <p className="text-sm text-slate-600">Completed</p>
-        </div>
-        <div className="card text-center">
-          <div className="text-2xl font-bold text-orange-600">{nurseData.todayStats.pending}</div>
-          <p className="text-sm text-slate-600">Pending</p>
-        </div>
-        <div className="card text-center">
-          <div className="text-2xl font-bold text-purple-600">₹{nurseData.todayStats.earnings}</div>
-          <p className="text-sm text-slate-600">Today's Earnings</p>
-        </div>
-      </div>
+
 
       {/* Assigned Patients */}
       <div className="card mb-8">
@@ -400,14 +285,19 @@ export default function NurseDashboard() {
           </Link>
         </div>
 
-        {nurseData.assignedPatients.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-8 text-slate-500">
+            <div className="text-4xl mb-2">⏳</div>
+            <p>Loading assignments...</p>
+          </div>
+        ) : !realNurseData || realNurseData.todaysAppointments.length === 0 ? (
           <div className="text-center py-8 text-slate-500">
             <div className="text-4xl mb-2">📋</div>
             <p>No assignments for today</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {nurseData.assignedPatients.map((patient) => (
+            {realNurseData.todaysAppointments.map((patient: any) => (
               <div key={patient.id} className="border border-gray-200 rounded-lg p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -415,23 +305,28 @@ export default function NurseDashboard() {
                     <p className="text-slate-600">{patient.condition}</p>
                     <p className="text-sm text-slate-500">📍 {patient.address}</p>
                     <p className="text-sm text-slate-500">🕐 {new Date(patient.nextVisit).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                    {patient.phone && (
+                      <p className="text-sm text-slate-500">📞 {patient.phone}</p>
+                    )}
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      patient.priority === "high"
+                      patient.priority === "EMERGENCY"
                         ? "bg-red-100 text-red-800"
-                        : patient.priority === "low"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-yellow-100 text-yellow-800"
+                        : patient.priority === "URGENT"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-green-100 text-green-800"
                     }`}>
-                      {patient.priority}
+                      {patient.priority.toLowerCase()}
                     </span>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      patient.status === "confirmed"
+                      patient.status === "CONFIRMED"
                         ? "bg-blue-100 text-blue-800"
+                        : patient.status === "PENDING"
+                        ? "bg-yellow-100 text-yellow-800"
                         : "bg-gray-100 text-gray-800"
                     }`}>
-                      {patient.status}
+                      {patient.status.toLowerCase()}
                     </span>
                   </div>
                 </div>

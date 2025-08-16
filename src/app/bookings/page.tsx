@@ -1,65 +1,80 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-// Mock data - replace with real API calls
-const mockBookings = [
-  {
-    id: "1",
-    serviceType: "nurse",
-    nurseId: "nurse-1",
-    nurseName: "Sarah Johnson",
-    date: "2024-08-12",
-    time: "morning",
-    status: "confirmed",
-    address: "123 Main St, City",
-    notes: "Regular health checkup"
-  },
-  {
-    id: "2", 
-    serviceType: "lab",
-    nurseId: "lab-1",
-    nurseName: "Mike Chen",
-    date: "2024-08-10",
-    time: "afternoon", 
-    status: "completed",
-    address: "123 Main St, City",
-    notes: "Blood test for annual physical"
-  },
-  {
-    id: "3",
-    serviceType: "nurse",
-    nurseId: "nurse-2", 
-    nurseName: "Emily Davis",
-    date: "2024-08-15",
-    time: "evening",
-    status: "pending",
-    address: "123 Main St, City",
-    notes: "Medication management"
-  }
-];
+interface Booking {
+  id: string;
+  serviceType: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  status: string;
+  address: string;
+  notes?: string;
+  nurse?: { user: { name: string; image?: string } };
+}
+
 
 export default function BookingsPage() {
-  const [bookings] = useState(mockBookings);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [filter, setFilter] = useState("all");
 
-  const filteredBookings = bookings.filter(booking => 
-    filter === "all" || booking.status === filter
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch("/api/bookings?scope=patient", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          setBookings(data);
+        }
+      } catch (e) {
+        console.error("Failed to load bookings", e);
+      }
+    };
+    load();
+  }, []);
+
+  const filteredBookings = bookings.filter(booking =>
+    filter === "all" || booking.status === filter.toUpperCase()
   );
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "confirmed": return "bg-green-100 text-green-800";
-      case "pending": return "bg-yellow-100 text-yellow-800";
-      case "completed": return "bg-blue-100 text-blue-800";
-      case "cancelled": return "bg-red-100 text-red-800";
+      case "CONFIRMED": return "bg-green-100 text-green-800";
+      case "PENDING": return "bg-yellow-100 text-yellow-800";
+      case "COMPLETED": return "bg-blue-100 text-blue-800";
+      case "CANCELLED": return "bg-red-100 text-red-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
 
+  const handleStatusUpdate = async (bookingId: string, newStatus: string) => {
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (res.ok) {
+        // Reload bookings
+        const res = await fetch("/api/bookings?scope=patient", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          setBookings(data);
+        }
+      } else {
+        alert("Failed to update booking");
+      }
+    } catch (e) {
+      console.error("Failed to update booking:", e);
+      alert("Failed to update booking");
+    }
+  };
+
   const handleCancelBooking = (bookingId: string) => {
-    // TODO: Implement cancel booking logic
-    console.log("Cancel booking:", bookingId);
+    if (confirm("Are you sure you want to cancel this booking?")) {
+      handleStatusUpdate(bookingId, "CANCELLED");
+    }
   };
 
   const handleRescheduleBooking = (bookingId: string) => {
@@ -107,9 +122,9 @@ export default function BookingsPage() {
                     </span>
                     <div>
                       <h3 className="font-semibold text-lg">
-                        {booking.serviceType === "nurse" ? "Nurse Visit" : "Lab Service"}
+                        {booking.serviceType === "NURSE_VISIT" ? "Nurse Visit" : booking.serviceType === "LAB_SERVICE" ? "Lab Service" : booking.serviceType}
                       </h3>
-                      <p className="text-slate-600">with {booking.nurseName}</p>
+                      <p className="text-slate-600">{booking.nurse?.user?.name ? `with ${booking.nurse.user.name}` : ""}</p>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(booking.status)}`}>
                       {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
@@ -118,10 +133,10 @@ export default function BookingsPage() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-slate-600">
                     <div>
-                      <strong>Date:</strong> {new Date(booking.date).toLocaleDateString()}
+                      <strong>Date:</strong> {new Date(booking.appointmentDate).toLocaleDateString()}
                     </div>
                     <div>
-                      <strong>Time:</strong> {booking.time}
+                      <strong>Time:</strong> {booking.appointmentTime}
                     </div>
                     <div>
                       <strong>Address:</strong> {booking.address}
