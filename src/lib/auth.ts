@@ -66,11 +66,18 @@ export const authOptions: NextAuthOptions = {
       },
     }),
 
-    // Google OAuth Provider
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
+    // Google OAuth Provider (disabled until properly configured)
+    ...(process.env.GOOGLE_CLIENT_ID &&
+        process.env.GOOGLE_CLIENT_SECRET &&
+        process.env.GOOGLE_CLIENT_ID !== "placeholder-client-id-not-configured" &&
+        process.env.GOOGLE_CLIENT_SECRET !== "placeholder-secret-not-configured" &&
+        process.env.GOOGLE_CLIENT_ID !== "your-google-client-id" &&
+        process.env.GOOGLE_CLIENT_SECRET !== "your-google-client-secret"
+      ? [GoogleProvider({
+          clientId: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        })]
+      : []),
   ],
 
   session: {
