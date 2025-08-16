@@ -1,8 +1,9 @@
 /* CareBridge PWA service worker for mobile-first offline caching */
-const CACHE_NAME = 'carebridge-cache-v4';
+const CACHE_NAME = 'carebridge-cache-v5';
 const APP_SHELL = [
   '/',
   '/manifest.json',
+  '/applogo.png',
   '/auth/signin',
   '/auth/admin',
   '/emergency',

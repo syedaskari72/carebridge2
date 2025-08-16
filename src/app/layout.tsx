@@ -27,7 +27,10 @@ export const metadata: Metadata = {
     "Request nurses or lab attendants on demand and get AI‑powered guidance via the CareBridge assistant.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/applogo.png",
+    icon: [
+      { url: "/applogo.png", sizes: "192x192", type: "image/png" },
+      { url: "/applogo.png", sizes: "512x512", type: "image/png" }
+    ],
     shortcut: "/applogo.png",
     apple: "/applogo.png",
   },
@@ -54,6 +57,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="application-name" content="CareBridge" />
+        <meta name="apple-mobile-web-app-title" content="CareBridge" />
+        <meta name="msapplication-starturl" content="/" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background overflow-x-hidden`}
       >
