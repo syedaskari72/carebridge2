@@ -127,9 +127,10 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
                 <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                   <User className="h-5 w-5 text-primary" />
                 </div>
-                <div>
-                  <p className="font-medium text-foreground">{session.user.name}</p>
-                  <p className="text-sm text-muted-foreground capitalize">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground truncate">{session.user.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{session.user.email}</p>
+                  <p className="text-xs text-primary capitalize font-medium">
                     {session.user.userType.toLowerCase()}
                   </p>
                 </div>
