@@ -34,6 +34,29 @@ export default withAuth(
 
       // Redirect to correct dashboard if accessing wrong one
       if (dashboardType && dashboardType !== userType?.toLowerCase()) {
+        if (process.env.APP_DEBUG === "1") {
+          console.log("[Middleware] Dashboard redirect", {
+            userType,
+            dashboardType,
+            redirectTo: `/dashboard/${userType?.toLowerCase()}`
+          });
+        }
+        return NextResponse.redirect(
+          new URL(`/dashboard/${userType?.toLowerCase()}`, req.url)
+        );
+      }
+    }
+
+    // Handle root dashboard redirect - redirect to user-specific dashboard
+    if (pathname === "/dashboard" || pathname === "/dashboard/") {
+      const userType = token.userType as string;
+      if (userType) {
+        if (process.env.APP_DEBUG === "1") {
+          console.log("[Middleware] Root dashboard redirect", {
+            userType,
+            redirectTo: `/dashboard/${userType?.toLowerCase()}`
+          });
+        }
         return NextResponse.redirect(
           new URL(`/dashboard/${userType?.toLowerCase()}`, req.url)
         );

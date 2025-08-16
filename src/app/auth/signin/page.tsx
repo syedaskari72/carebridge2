@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { signIn, getSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Chrome } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
@@ -17,7 +16,6 @@ export default function SignInPage() {
   const [userType, setUserType] = useState("PATIENT");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,30 +32,10 @@ export default function SignInPage() {
 
       if (result?.error) {
         setError("Invalid credentials");
-      } else {
-        // Get session to determine redirect
-        const session = await getSession();
-        if (session?.user.userType) {
-          // Redirect based on user type
-          switch (session.user.userType) {
-            case "PATIENT":
-              router.push("/dashboard/patient");
-              break;
-            case "NURSE":
-              router.push("/dashboard/nurse");
-              break;
-            case "DOCTOR":
-              router.push("/dashboard/doctor");
-              break;
-            case "ADMIN":
-              router.push("/dashboard/admin");
-              break;
-            default:
-              router.push("/");
-          }
-        } else {
-          router.push("/");
-        }
+      } else if (result?.ok) {
+        // Force a page reload to ensure session is properly established
+        // This is more reliable on Vercel than trying to get session immediately
+        window.location.href = "/dashboard/patient"; // Default redirect, middleware will handle proper routing
       }
     } catch (error) {
       console.error("[SignIn] error", error);
@@ -67,9 +45,7 @@ export default function SignInPage() {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl: "/dashboard/patient" });
-  };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
