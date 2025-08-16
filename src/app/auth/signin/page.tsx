@@ -23,6 +23,8 @@ export default function SignInPage() {
     setError("");
 
     try {
+      console.log("[SignIn] Attempting login", { email, userType });
+
       const result = await signIn("credentials", {
         email,
         password,
@@ -30,15 +32,22 @@ export default function SignInPage() {
         redirect: false,
       });
 
+      console.log("[SignIn] SignIn result", result);
+
       if (result?.error) {
+        console.log("[SignIn] Login failed", { error: result.error });
         setError("Invalid credentials");
       } else if (result?.ok) {
+        console.log("[SignIn] Login successful, redirecting...");
         // Force a page reload to ensure session is properly established
         // This is more reliable on Vercel than trying to get session immediately
         window.location.href = "/dashboard/patient"; // Default redirect, middleware will handle proper routing
+      } else {
+        console.log("[SignIn] Unexpected result", result);
+        setError("Login failed - please try again");
       }
     } catch (error) {
-      console.error("[SignIn] error", error);
+      console.error("[SignIn] Exception during login", error);
       setError("Something went wrong");
     } finally {
       setIsLoading(false);

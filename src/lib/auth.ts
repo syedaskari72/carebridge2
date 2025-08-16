@@ -32,12 +32,20 @@ export const authOptions: NextAuthOptions = {
         userType: { label: "User Type", type: "text" }
       },
       async authorize(credentials) {
+        console.log("[Auth][authorize] START", {
+          hasEmail: !!credentials?.email,
+          hasPassword: !!credentials?.password,
+          email: credentials?.email
+        });
+
         if (!credentials?.email || !credentials?.password) {
+          console.log("[Auth][authorize] FAIL - missing credentials");
           return null;
         }
 
         // Handle hardcoded admin credentials
         if (credentials.email === "admin@carebridge.com" && credentials.password === "admin@123") {
+          console.log("[Auth][authorize] SUCCESS - admin login");
           return {
             id: "admin",
             email: "admin@carebridge.com",
@@ -47,46 +55,57 @@ export const authOptions: NextAuthOptions = {
           };
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-          include: {
-            patient: true,
-            nurse: true,
-            doctor: true,
-            admin: true
-          }
-        });
+        try {
+          console.log("[Auth][authorize] Looking up user in database...");
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+            include: {
+              patient: true,
+              nurse: true,
+              doctor: true,
+              admin: true
+            }
+          });
 
-        if (!user || !user.password) {
-          if (process.env.APP_DEBUG === "1") {
-            console.log("[Auth][authorize] user not found or has no password", { email: credentials.email });
+          console.log("[Auth][authorize] Database query result", {
+            found: !!user,
+            hasPassword: !!user?.password,
+            userType: user?.userType
+          });
+
+          if (!user || !user.password) {
+            console.log("[Auth][authorize] FAIL - user not found or no password");
+            return null;
           }
+
+          console.log("[Auth][authorize] Comparing passwords...");
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
+
+          console.log("[Auth][authorize] Password comparison result", { isPasswordValid });
+
+          if (!isPasswordValid) {
+            console.log("[Auth][authorize] FAIL - invalid password");
+            return null;
+          }
+
+          const authUser = {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            userType: user.userType,
+            image: user.image,
+          };
+
+          console.log("[Auth][authorize] SUCCESS - returning user", authUser);
+          return authUser;
+
+        } catch (error) {
+          console.error("[Auth][authorize] ERROR", error);
           return null;
         }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
-        if (!isPasswordValid) {
-          if (process.env.APP_DEBUG === "1") {
-            console.log("[Auth][authorize] invalid password", { email: credentials.email });
-          }
-          return null;
-        }
-
-        if (process.env.APP_DEBUG === "1") {
-          console.log("[Auth][authorize] success", { id: user.id, email: user.email, userType: user.userType });
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          userType: user.userType,
-          image: user.image,
-        };
       },
     }),
 
@@ -112,23 +131,46 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async jwt({ token, user, account }) {
-      if (process.env.APP_DEBUG === "1") {
-        console.log("[Auth][jwt]", { hasUser: !!user, provider: account?.provider });
-      }
+      console.log("[Auth][jwt] START", {
+        hasUser: !!user,
+        hasToken: !!token,
+        provider: account?.provider,
+        tokenSub: token?.sub,
+        userFromAuth: user ? { id: (user as any).id, email: (user as any).email, userType: (user as any).userType } : null
+      });
+
       if (user) {
+        console.log("[Auth][jwt] Adding userType to token", { userType: (user as any).userType });
         token.userType = (user as any).userType;
       }
+
+      console.log("[Auth][jwt] RESULT", {
+        sub: token.sub,
+        userType: (token as any).userType,
+        email: token.email
+      });
       return token;
     },
 
     async session({ session, token }) {
-      if (process.env.APP_DEBUG === "1") {
-        console.log("[Auth][session]", { hasToken: !!token, sub: token?.sub, userType: (token as any)?.userType });
-      }
+      console.log("[Auth][session] START", {
+        hasToken: !!token,
+        hasSession: !!session,
+        tokenSub: token?.sub,
+        tokenUserType: (token as any)?.userType,
+        sessionUserEmail: session?.user?.email
+      });
+
       if (token) {
         (session.user as any).id = token.sub!;
         (session.user as any).userType = (token as any).userType as UserType;
+        console.log("[Auth][session] Updated session user", {
+          id: (session.user as any).id,
+          userType: (session.user as any).userType
+        });
       }
+
+      console.log("[Auth][session] RESULT", session);
       return session;
     },
 
