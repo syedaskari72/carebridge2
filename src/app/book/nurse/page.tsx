@@ -155,14 +155,10 @@ function BookNurseContent() {
 
   const filteredNurses = selectedService
     ? nurses.filter(nurse => {
-        // For debugging - let's be more lenient with availability check
-        // Show nurses that are verified, and either available or on duty
-        if (!nurse.isVerified) return false;
+        // Only show verified and available nurses
+        if (!nurse.isVerified || !nurse.isAvailable) return false;
 
-        // Show nurse if they are available
-        if (!nurse.isAvailable) return false;
-
-        // If "others" is selected, show all available nurses
+        // If "others" is selected, show all verified and available nurses
         if (selectedService === "others") {
           return true;
         }

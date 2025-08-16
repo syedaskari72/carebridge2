@@ -9,11 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Users, 
-  UserCheck, 
-  AlertTriangle, 
-  FileText, 
+import {
+  Users,
+  UserCheck,
+  AlertTriangle,
+  FileText,
   Search,
   Filter,
   Eye,
@@ -23,7 +23,9 @@ import {
   DollarSign,
   Activity,
   Shield,
-  Clock
+  Clock,
+  Download,
+  ExternalLink
 } from "lucide-react";
 
 // Interfaces
@@ -200,6 +202,29 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Failed to verify document:', error);
+    }
+  };
+
+  const handleViewDocument = (documentUrl: string) => {
+    window.open(documentUrl, '_blank');
+  };
+
+  const handleDownloadDocument = async (documentUrl: string, fileName: string) => {
+    try {
+      const response = await fetch(documentUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      alert('Failed to download document');
     }
   };
 
@@ -479,32 +504,63 @@ export default function AdminDashboard() {
 
                           {/* Document verification status */}
                           {user.nurse?.documents && user.nurse.documents.length > 0 && (
-                            <div className="space-y-1">
+                            <div className="space-y-2">
                               {user.nurse.documents.map((doc) => (
-                                <div key={doc.id} className="flex items-center justify-between text-xs">
-                                  <span>{doc.type}</span>
-                                  <div className="flex gap-1">
+                                <div key={doc.id} className="border rounded p-2">
+                                  <div className="flex items-center justify-between text-xs mb-2">
+                                    <span className="font-medium">{doc.type}</span>
                                     {doc.isVerified ? (
                                       <Badge variant="default" className="text-xs">Verified</Badge>
                                     ) : (
-                                      <div className="flex gap-1">
+                                      <Badge variant="secondary" className="text-xs">Pending</Badge>
+                                    )}
+                                  </div>
+
+                                  <div className="flex gap-1 flex-wrap">
+                                    {/* View Document */}
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-6 px-2 text-xs"
+                                      onClick={() => handleViewDocument(doc.fileUrl)}
+                                      title="View Document"
+                                    >
+                                      <Eye className="h-3 w-3" />
+                                    </Button>
+
+                                    {/* Download Document */}
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-6 px-2 text-xs"
+                                      onClick={() => handleDownloadDocument(doc.fileUrl, `${doc.type}_${user.name}.pdf`)}
+                                      title="Download Document"
+                                    >
+                                      <Download className="h-3 w-3" />
+                                    </Button>
+
+                                    {/* Verification Actions */}
+                                    {!doc.isVerified && (
+                                      <>
                                         <Button
                                           size="sm"
                                           variant="outline"
-                                          className="h-6 px-2 text-xs"
+                                          className="h-6 px-2 text-xs text-green-600 hover:text-green-700"
                                           onClick={() => handleVerifyDocument(doc.id, 'approve')}
+                                          title="Approve Document"
                                         >
                                           <CheckCircle className="h-3 w-3" />
                                         </Button>
                                         <Button
                                           size="sm"
                                           variant="outline"
-                                          className="h-6 px-2 text-xs"
+                                          className="h-6 px-2 text-xs text-red-600 hover:text-red-700"
                                           onClick={() => handleVerifyDocument(doc.id, 'reject')}
+                                          title="Reject Document"
                                         >
                                           <XCircle className="h-3 w-3" />
                                         </Button>
-                                      </div>
+                                      </>
                                     )}
                                   </div>
                                 </div>

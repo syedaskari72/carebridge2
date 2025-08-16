@@ -4,13 +4,15 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
+import DocumentUpload from "@/components/DocumentUpload";
+import ProfilePictureUpload from "@/components/ProfilePictureUpload";
 
 const departments = [
   "GENERAL",
@@ -47,6 +49,7 @@ export default function NurseProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [nurse, setNurse] = useState<any>(null);
+  const [documents, setDocuments] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -85,10 +88,25 @@ export default function NurseProfilePage() {
           location: data.location || ""
         });
       }
+
+      // Load documents
+      await loadDocuments();
     } catch (e) {
       console.error("Error loading nurse profile:", e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadDocuments = async () => {
+    try {
+      const res = await fetch("/api/nurse/documents");
+      if (res.ok) {
+        const data = await res.json();
+        setDocuments(data);
+      }
+    } catch (e) {
+      console.error("Error loading documents:", e);
     }
   };
 
@@ -155,6 +173,26 @@ export default function NurseProfilePage() {
       </div>
 
       <div className="space-y-6">
+        {/* Profile Picture */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Profile Picture</CardTitle>
+            <CardDescription>Upload a professional profile picture</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ProfilePictureUpload
+              currentImage={nurse?.user?.image}
+              userName={nurse?.user?.name || ""}
+              onImageUploaded={(imageUrl: string) => {
+                setNurse((prev: any) => ({
+                  ...prev,
+                  user: { ...prev.user, image: imageUrl }
+                }));
+              }}
+            />
+          </CardContent>
+        </Card>
+
         {/* Basic Information */}
         <Card>
           <CardHeader>
@@ -272,6 +310,13 @@ export default function NurseProfilePage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Document Upload Section */}
+        <DocumentUpload
+          documents={documents}
+          onDocumentUploaded={loadDocuments}
+          isVerified={nurse?.isVerified || false}
+        />
 
         {/* Save Button */}
         <div className="flex justify-end">

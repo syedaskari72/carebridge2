@@ -67,7 +67,8 @@ export default function NursesPage() {
     const name = (nurse.user?.name || "").toLowerCase();
     const matchesSearch = name.includes(searchTerm.toLowerCase());
     const matchesSpecialty = !specialtyFilter || nurse.department === specialtyFilter;
-    return matchesSearch && matchesSpecialty;
+    // Only show verified nurses
+    return nurse.isVerified && matchesSearch && matchesSpecialty;
   });
 
   const handleBookNurse = (nurseId: string) => {

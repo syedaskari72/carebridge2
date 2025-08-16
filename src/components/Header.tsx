@@ -82,8 +82,6 @@ export default function Header() {
       case "ADMIN":
         return [
           { href: "/dashboard/admin", label: "Dashboard" },
-          { href: "/dashboard/admin/users", label: "Users" },
-          { href: "/dashboard/admin/reports", label: "Reports" },
         ];
       default:
         return [];
