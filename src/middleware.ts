@@ -21,6 +21,9 @@ export default withAuth(
 
     // Redirect to signin if not authenticated
     if (!token) {
+      if (process.env.APP_DEBUG === "1") {
+        console.log("[Middleware] Unauthenticated redirect", { path: pathname });
+      }
       return NextResponse.redirect(new URL("/auth/signin", req.url));
     }
 

@@ -8,6 +8,20 @@ import { UserType } from "@prisma/client";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
+  debug: process.env.APP_DEBUG === "1",
+  logger: {
+    error(code, metadata) {
+      console.error("[NextAuth][error]", code, metadata);
+    },
+    warn(code) {
+      console.warn("[NextAuth][warn]", code);
+    },
+    debug(code, metadata) {
+      if (process.env.APP_DEBUG === "1") {
+        console.log("[NextAuth][debug]", code, metadata);
+      }
+    },
+  },
   providers: [
     // Email/Password Provider
     CredentialsProvider({
@@ -44,6 +58,9 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user || !user.password) {
+          if (process.env.APP_DEBUG === "1") {
+            console.log("[Auth][authorize] user not found or has no password", { email: credentials.email });
+          }
           return null;
         }
 
@@ -53,7 +70,14 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (!isPasswordValid) {
+          if (process.env.APP_DEBUG === "1") {
+            console.log("[Auth][authorize] invalid password", { email: credentials.email });
+          }
           return null;
+        }
+
+        if (process.env.APP_DEBUG === "1") {
+          console.log("[Auth][authorize] success", { id: user.id, email: user.email, userType: user.userType });
         }
 
         return {
@@ -86,21 +110,27 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async jwt({ token, user, account }) {
+      if (process.env.APP_DEBUG === "1") {
+        console.log("[Auth][jwt]", { hasUser: !!user, provider: account?.provider });
+      }
       if (user) {
-        token.userType = user.userType;
+        token.userType = (user as any).userType;
       }
       return token;
     },
 
     async session({ session, token }) {
+      if (process.env.APP_DEBUG === "1") {
+        console.log("[Auth][session]", { hasToken: !!token, sub: token?.sub, userType: (token as any)?.userType });
+      }
       if (token) {
-        session.user.id = token.sub!;
-        session.user.userType = token.userType as UserType;
+        (session.user as any).id = token.sub!;
+        (session.user as any).userType = (token as any).userType as UserType;
       }
       return session;
     },
 
-    async signIn({ user, account, profile }) {
+    async signIn({ account, profile }) {
       // For OAuth providers, create user profile if doesn't exist
       if (account?.provider === "google" && profile?.email) {
         const existingUser = await prisma.user.findUnique({
@@ -130,6 +160,20 @@ export const authOptions: NextAuthOptions = {
   },
 
   secret: process.env.NEXTAUTH_SECRET,
+
+  // Handle host trust for Vercel deployment
+  useSecureCookies: process.env.NODE_ENV === "production",
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === "production" ? "__Secure-next-auth.session-token" : "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+  },
 };
 
 // Type augmentation for NextAuth

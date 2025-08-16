@@ -60,6 +60,7 @@ export default function SignInPage() {
         }
       }
     } catch (error) {
+      console.error("[SignIn] error", error);
       setError("Something went wrong");
     } finally {
       setIsLoading(false);

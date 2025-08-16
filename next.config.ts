@@ -1,16 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ["@prisma/client", "prisma"],
-  },
+  serverExternalPackages: ["@prisma/client", "prisma"],
   // Ensure static files are properly handled
   trailingSlash: false,
   // PWA and static optimization
   generateEtags: false,
   poweredByHeader: false,
-  // Build optimization
-  swcMinify: true,
+  // Build optimization (swcMinify is enabled by default in Next.js 15)
   // Ensure proper routing
   async redirects() {
     return [
