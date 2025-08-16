@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Booking {
   id: string;
@@ -10,11 +11,18 @@ interface Booking {
   status: string;
   address: string;
   notes?: string;
-  nurse?: { user: { name: string; image?: string } };
+  actualDuration?: number;
+  actualCost?: number;
+  totalCost?: number;
+  nurse?: {
+    user: { name: string; image?: string };
+    hourlyRate: number;
+  };
 }
 
 
 export default function BookingsPage() {
+  const router = useRouter();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filter, setFilter] = useState("all");
 
@@ -148,25 +156,58 @@ export default function BookingsPage() {
                       <strong>Notes:</strong> {booking.notes}
                     </div>
                   )}
+
+                  {/* Pricing Information */}
+                  {(booking.actualCost || booking.totalCost) && (
+                    <div className="mt-3 p-3 bg-green-50 rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-green-700">
+                          {booking.actualCost ? 'Final Cost' : 'Estimated Cost'}
+                        </span>
+                        <span className="text-lg font-bold text-green-600">
+                          PKR {booking.actualCost || booking.totalCost}
+                        </span>
+                      </div>
+                      {booking.actualDuration && (
+                        <div className="text-xs text-green-600 mt-1">
+                          Service Duration: {Math.floor(booking.actualDuration / 60)}h {booking.actualDuration % 60}m
+                        </div>
+                      )}
+                      {booking.nurse?.hourlyRate && !booking.actualCost && (
+                        <div className="text-xs text-green-600 mt-1">
+                          Rate: PKR {booking.nurse.hourlyRate}/hour (estimated)
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Actions */}
-                {booking.status === "confirmed" && (
-                  <div className="flex gap-2 mt-4 md:mt-0">
-                    <button
-                      onClick={() => handleRescheduleBooking(booking.id)}
-                      className="px-4 py-2 text-cyan-600 border border-cyan-600 rounded-lg hover:bg-cyan-50"
-                    >
-                      Reschedule
-                    </button>
-                    <button
-                      onClick={() => handleCancelBooking(booking.id)}
-                      className="px-4 py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                )}
+                <div className="flex gap-2 mt-4 md:mt-0">
+                  <button
+                    onClick={() => router.push(`/bookings/${booking.id}`)}
+                    className="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50"
+                  >
+                    View Details
+                  </button>
+
+                  {booking.status === "confirmed" && (
+                    <>
+                      <button
+                        onClick={() => handleRescheduleBooking(booking.id)}
+                        className="px-4 py-2 text-cyan-600 border border-cyan-600 rounded-lg hover:bg-cyan-50"
+                      >
+                        Reschedule
+                      </button>
+                      <button
+                        onClick={() => handleCancelBooking(booking.id)}
+                        className="px-4 py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           ))}

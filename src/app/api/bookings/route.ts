@@ -75,6 +75,26 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { serviceType, nurseId, appointmentDate, appointmentTime, urgencyLevel, address, notes } = body;
 
+    // Calculate estimated cost if nurse is selected
+    let estimatedCost = null;
+    if (nurseId) {
+      const nurse = await prisma.nurse.findUnique({ where: { id: nurseId } });
+      if (nurse) {
+        const serviceTypes = [
+          { id: "blood-pressure", duration: 30 },
+          { id: "medication", duration: 45 },
+          { id: "wound-care", duration: 60 },
+          { id: "diabetes-care", duration: 30 },
+          { id: "general-checkup", duration: 45 },
+          { id: "post-surgery", duration: 90 }
+        ];
+
+        const service = serviceTypes.find(s => s.id === serviceType);
+        const durationMinutes = service ? service.duration : 60;
+        estimatedCost = Math.round((nurse.hourlyRate * durationMinutes) / 60);
+      }
+    }
+
     const booking = await prisma.booking.create({
       data: {
         patientId: patient.id,
@@ -86,6 +106,7 @@ export async function POST(request: NextRequest) {
         address,
         notes,
         status: nurseId ? "PENDING" : "PENDING",
+        totalCost: estimatedCost,
       },
       include: {
         patient: {
@@ -114,6 +135,8 @@ export async function POST(request: NextRequest) {
     // Send confirmation emails if nurse is assigned
     if (booking.nurse && booking.patient) {
       try {
+        console.log('Booking created successfully, sending confirmation emails...');
+
         // Calculate estimated cost
         const serviceTypes = [
           { id: "blood-pressure", name: "Blood Pressure Monitoring", duration: "30 min" },
@@ -128,7 +151,14 @@ export async function POST(request: NextRequest) {
         const durationMinutes = service ? parseInt(service.duration.split(' ')[0]) : 60;
         const estimatedCost = Math.round((booking.nurse.hourlyRate * durationMinutes) / 60);
 
-        await sendBookingConfirmationEmail({
+        console.log('Sending emails with data:', {
+          patientEmail: booking.patient.user.email,
+          nurseEmail: booking.nurse.user.email,
+          serviceType: service?.name || serviceType,
+          estimatedCost
+        });
+
+        const emailResult = await sendBookingConfirmationEmail({
           patientName: booking.patient.user.name,
           patientEmail: booking.patient.user.email,
           nurseName: booking.nurse.user.name,
@@ -141,10 +171,14 @@ export async function POST(request: NextRequest) {
           bookingId: booking.id,
           notes: booking.notes || undefined,
         });
+
+        console.log('Email sending result:', emailResult);
       } catch (emailError) {
         console.error('Failed to send confirmation emails:', emailError);
         // Don't fail the booking if email fails
       }
+    } else {
+      console.log('No nurse assigned or patient data missing, skipping email');
     }
 
     return NextResponse.json(booking, { status: 201 });

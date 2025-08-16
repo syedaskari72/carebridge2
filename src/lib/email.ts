@@ -25,6 +25,16 @@ export interface BookingEmailData {
 
 export async function sendBookingConfirmationEmail(data: BookingEmailData) {
   try {
+    console.log('Attempting to send booking confirmation emails...');
+    console.log('Gmail user:', process.env.GMAIL_USER);
+    console.log('Gmail password set:', !!process.env.GMAIL_APP_PASSWORD);
+    console.log('Patient email:', data.patientEmail);
+    console.log('Nurse email:', data.nurseEmail);
+
+    // Test transporter connection
+    await transporter.verify();
+    console.log('SMTP connection verified successfully');
+
     // Email to patient
     const patientMailOptions = {
       from: process.env.GMAIL_USER,
@@ -42,12 +52,14 @@ export async function sendBookingConfirmationEmail(data: BookingEmailData) {
     };
 
     // Send both emails
-    await Promise.all([
+    console.log('Sending emails...');
+    const results = await Promise.all([
       transporter.sendMail(patientMailOptions),
       transporter.sendMail(nurseMailOptions),
     ]);
 
     console.log('Booking confirmation emails sent successfully');
+    console.log('Email results:', results.map(r => ({ messageId: r.messageId, response: r.response })));
     return { success: true };
   } catch (error) {
     console.error('Error sending booking confirmation emails:', error);

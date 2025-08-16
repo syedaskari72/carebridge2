@@ -96,9 +96,11 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">C</span>
-            </div>
+            <img
+              src="/applogo.png"
+              alt="CareBridge Logo"
+              className="w-8 h-8 object-contain"
+            />
             <span className="text-xl font-bold text-foreground">CareBridge</span>
           </Link>
 

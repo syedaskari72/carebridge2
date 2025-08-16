@@ -27,9 +27,9 @@ export const metadata: Metadata = {
     "Request nurses or lab attendants on demand and get AI‑powered guidance via the CareBridge assistant.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/icons/icon-192x192.png",
-    shortcut: "/icons/icon-192x192.png",
-    apple: "/icons/icon-192x192.png",
+    icon: "/applogo.png",
+    shortcut: "/applogo.png",
+    apple: "/applogo.png",
   },
   appleWebApp: {
     capable: true,

@@ -255,6 +255,14 @@ model Booking {
   materialCost    Float?
   totalCost       Float?
 
+  // Timing and arrival tracking
+  nurseArrivedAt     DateTime?
+  arrivalConfirmedAt DateTime?
+  serviceStartedAt   DateTime?
+  serviceEndedAt     DateTime?
+  actualDuration     Int?      // in minutes
+  actualCost         Float?    // calculated based on actual time
+
   // Doctor approval
   doctorId        String?
   doctorApproved  Boolean @default(false)
