@@ -119,16 +119,7 @@ export default function Header() {
           <div className="hidden md:flex items-center space-x-4">
             <InstallButton />
             <ThemeToggle />
-            {!session || status === "unauthenticated" ? (
-              <>
-                <Button asChild>
-                  <Link href="/book">Book a Nurse</Link>
-                </Button>
-                <Button variant="ghost" asChild>
-                  <Link href="/auth/signin">Sign In</Link>
-                </Button>
-              </>
-            ) : status === "loading" ? (
+            {status === "loading" ? (
               <div className="text-sm text-muted-foreground">Loading...</div>
             ) : status === "authenticated" && session ? (
               <>
@@ -149,13 +140,30 @@ export default function Header() {
                     <DropdownMenuItem asChild>
                       <Link href="/profile">Profile</Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={
+                        session.user.userType === "PATIENT" ? "/dashboard/patient" :
+                        session.user.userType === "NURSE" ? "/dashboard/nurse" :
+                        session.user.userType === "DOCTOR" ? "/dashboard/doctor" :
+                        "/dashboard/admin"
+                      }>Dashboard</Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleSignOut}>
                       Sign Out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
-            ) : null}
+            ) : (
+              <>
+                <Button asChild>
+                  <Link href="/book">Book a Nurse</Link>
+                </Button>
+                <Button variant="ghost" asChild>
+                  <Link href="/auth/signin">Sign In</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
