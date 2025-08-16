@@ -40,30 +40,34 @@ self.addEventListener('fetch', (event) => {
   // Skip chrome-extension, moz-extension, and other non-http(s) requests
   if (!req.url.startsWith('http://') && !req.url.startsWith('https://')) return;
 
-  // Network-first strategy for navigation requests (pages)
+  // Network-only for navigation requests (NEVER cache HTML pages)
   if (req.mode === 'navigate') {
     event.respondWith(
-      fetch(req)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(req, copy).catch((err) => {
-              console.warn('Cache put failed for navigation:', err);
-            });
-          });
-          return res;
-        })
-        .catch(() => caches.match(req).then((r) => r || caches.match('/')))
+      fetch(req).catch(() => caches.match('/'))
     );
     return;
   }
 
-  // Cache-first with network fallback for static assets and API GETs
+  // Do NOT cache API calls (especially /api/auth/session)
+  const url = new URL(req.url);
+  if (url.pathname.startsWith('/api/')) {
+    return; // let the request pass through normally (network)
+  }
+
+  // Only cache static asset requests (css, js, images, fonts, icons)
+  const isStaticAsset = /\.(?:js|css|png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf)$/i.test(url.pathname)
+    || url.pathname.startsWith('/icons/')
+    || url.pathname === '/manifest.json';
+
+  if (!isStaticAsset) {
+    return; // don't cache other stuff
+  }
+
+  // Cache-first with network fallback for static assets
   event.respondWith(
     caches.match(req).then((cached) => {
       if (cached) return cached;
       return fetch(req).then((res) => {
-        // Only cache successful, basic, same-origin responses
         if (res && res.status === 200 && res.type === 'basic') {
           const copy = res.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -73,6 +77,9 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return res;
+      }).catch((err) => {
+        console.warn('Fetch failed:', err);
+        return caches.match(req);
       });
     })
   );
