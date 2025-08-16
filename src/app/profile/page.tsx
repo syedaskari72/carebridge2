@@ -190,7 +190,8 @@ export default function ProfilePage() {
 
   const tabs = [
     { id: "personal", label: "Personal Info", icon: "👤" },
-    { id: "medical", label: "Medical Info", icon: "🏥" },
+    // Only show medical info tab for patients, not nurses
+    ...(session?.user.userType === "PATIENT" ? [{ id: "medical", label: "Medical Info", icon: "🏥" }] : []),
     { id: "emergency", label: "Emergency Contact", icon: "🚨" },
     { id: "preferences", label: "Preferences", icon: "⚙️" }
   ];

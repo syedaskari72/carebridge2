@@ -20,20 +20,46 @@ export default function NursesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [specialtyFilter, setSpecialtyFilter] = useState("");
 
+  const loadNurses = async () => {
+    try {
+      const res = await fetch(`/api/nurses?q=${encodeURIComponent(searchTerm)}`, {
+        cache: 'no-store', // Always fetch fresh data
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNurses(data);
+      }
+    } catch (e) {
+      console.error("Failed to load nurses", e);
+    }
+  };
+
   useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch(`/api/nurses?q=${encodeURIComponent(searchTerm)}`);
-        if (res.ok) {
-          const data = await res.json();
-          setNurses(data);
-        }
-      } catch (e) {
-        console.error("Failed to load nurses", e);
+    loadNurses();
+  }, [searchTerm]);
+
+  // Refresh data when page becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadNurses();
       }
     };
-    load();
-  }, [searchTerm]);
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  // Refresh data every 30 seconds to keep status current
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadNurses();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const allSpecialties = Array.from(new Set(nurses.map(n => n.department).filter(Boolean) as string[]));
 

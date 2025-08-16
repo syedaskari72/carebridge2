@@ -43,12 +43,12 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Handle hardcoded admin credentials
-        if (credentials.email === "admin@carebridge.com" && credentials.password === "admin@123") {
+        // Handle admin credentials from environment variables
+        if (credentials.email === process.env.ADMIN_EMAIL && credentials.password === process.env.ADMIN_PASSWORD) {
           console.log("[Auth][authorize] SUCCESS - admin login");
           return {
             id: "admin",
-            email: "admin@carebridge.com",
+            email: process.env.ADMIN_EMAIL,
             name: "System Administrator",
             userType: "ADMIN",
             image: null,

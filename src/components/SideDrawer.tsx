@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { X, User, Settings, LogOut, Home, Calendar, Users, MessageSquare, Shield, Activity } from "lucide-react";
+import { X, User, Settings, LogOut, Home, Calendar, Users, MessageSquare, Shield, Activity, MapPin } from "lucide-react";
+import { useNurseStatus } from "@/contexts/NurseStatusContext";
 
 interface SideDrawerProps {
   isOpen: boolean;
@@ -13,9 +14,96 @@ interface SideDrawerProps {
 
 export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
   const { data: session, status } = useSession();
+  const { isOnDuty, isAvailable, location, setIsOnDuty, setIsAvailable, refreshStatus } = useNurseStatus();
+  const [loadingCheckIn, setLoadingCheckIn] = useState(false);
 
   // Debug session state
   console.log("[SideDrawer] Session status:", status, "Session:", session);
+
+  // The nurse status is now managed by the context
+
+  const handleCheckIn = async () => {
+    setLoadingCheckIn(true);
+    try {
+      const response = await fetch("/api/nurse/checkin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          location: location ? JSON.stringify(location) : null,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      if (response.ok) {
+        setIsOnDuty(true);
+        setIsAvailable(true);
+        // Refresh the status from server to ensure consistency
+        await refreshStatus();
+        // Show success message
+        alert("Checked in successfully! You are now available for bookings.");
+      } else {
+        alert("Failed to check in. Please try again.");
+      }
+    } catch (error) {
+      console.error("Check-in error:", error);
+      alert("Failed to check in. Please try again.");
+    } finally {
+      setLoadingCheckIn(false);
+    }
+  };
+
+  const handleCheckOut = async () => {
+    setLoadingCheckIn(true);
+    try {
+      const response = await fetch("/api/nurse/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          location: location ? JSON.stringify(location) : null,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      if (response.ok) {
+        setIsOnDuty(false);
+        setIsAvailable(false);
+        // Refresh the status from server to ensure consistency
+        await refreshStatus();
+        // Show success message
+        alert("Checked out successfully! You are now unavailable for bookings.");
+      } else {
+        alert("Failed to check out. Please try again.");
+      }
+    } catch (error) {
+      console.error("Check-out error:", error);
+      alert("Failed to check out. Please try again.");
+    } finally {
+      setLoadingCheckIn(false);
+    }
+  };
+
+  const handleSOS = async () => {
+    try {
+      const response = await fetch("/api/nurse/sos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          location: location ? JSON.stringify(location) : null,
+          timestamp: new Date().toISOString(),
+          urgency: "HIGH",
+        }),
+      });
+
+      if (response.ok) {
+        alert("🚨 SOS Alert sent! Emergency services and your contacts have been notified.");
+      } else {
+        alert("Failed to send SOS alert. Please call emergency services directly.");
+      }
+    } catch (error) {
+      console.error("SOS error:", error);
+      alert("Failed to send SOS alert. Please call emergency services directly.");
+    }
+  };
 
   const handleSignOut = async () => {
     console.log("[SideDrawer] Starting logout process...");
@@ -219,12 +307,39 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Safety Actions
                   </p>
+                  {/* Status indicator */}
+                  <div className="flex items-center space-x-2 mt-1">
+                    <div className={`w-2 h-2 rounded-full ${isOnDuty ? 'bg-green-500' : 'bg-gray-400'}`} />
+                    <span className="text-xs text-muted-foreground">
+                      {isOnDuty ? 'On Duty' : 'Off Duty'}
+                    </span>
+                    {location && (
+                      <MapPin className="h-3 w-3 text-muted-foreground" />
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-1">
-                  <button className="w-full px-3 py-2 rounded-lg bg-green-600 text-white font-medium text-center">
-                    Check In
-                  </button>
-                  <button className="w-full px-3 py-2 rounded-lg bg-red-600 text-white font-medium text-center">
+                  {!isOnDuty ? (
+                    <button
+                      onClick={handleCheckIn}
+                      disabled={loadingCheckIn}
+                      className="w-full px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-medium text-center transition-colors"
+                    >
+                      {loadingCheckIn ? "Checking In..." : "✓ Check In"}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleCheckOut}
+                      disabled={loadingCheckIn}
+                      className="w-full px-3 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white font-medium text-center transition-colors"
+                    >
+                      {loadingCheckIn ? "Checking Out..." : "⏹ Check Out"}
+                    </button>
+                  )}
+                  <button
+                    onClick={handleSOS}
+                    className="w-full px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-center transition-colors"
+                  >
                     🚨 SOS Alert
                   </button>
                 </div>

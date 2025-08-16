@@ -14,11 +14,13 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useDrawer } from "@/components/DrawerProvider";
 import InstallButton from "@/components/InstallButton";
 import { Menu, ChevronDown, User } from "lucide-react";
+import { useNurseStatus } from "@/contexts/NurseStatusContext";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { open: openDrawer } = useDrawer();
   const { data: session, status } = useSession();
+  const { isOnDuty } = useNurseStatus();
 
   // Debug session state
   console.log("[Header] Session status:", status, "Session:", session);
@@ -172,12 +174,26 @@ export default function Header() {
               <InstallButton />
             </div>
             <ThemeToggle />
+            {/* Nurse status indicator for mobile */}
+            {session?.user.userType === "NURSE" && (
+              <div className="flex items-center space-x-1">
+                <div className={`w-2 h-2 rounded-full ${isOnDuty ? 'bg-green-500' : 'bg-gray-400'}`} />
+                <span className="text-xs text-muted-foreground hidden sm:inline">
+                  {isOnDuty ? 'On Duty' : 'Off Duty'}
+                </span>
+              </div>
+            )}
             <Button
               variant="ghost"
               size="icon"
               onClick={openDrawer}
+              className="relative"
             >
               <Menu className="h-6 w-6" />
+              {/* Status indicator on menu button for nurses */}
+              {session?.user.userType === "NURSE" && isOnDuty && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
+              )}
             </Button>
           </div>
         </div>

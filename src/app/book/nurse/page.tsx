@@ -37,7 +37,8 @@ const serviceTypes = [
   { id: "wound-care", name: "Wound Care", duration: "60 min" },
   { id: "diabetes-care", name: "Diabetes Management", duration: "45 min" },
   { id: "general-checkup", name: "General Health Checkup", duration: "60 min" },
-  { id: "post-surgery", name: "Post-Surgery Care", duration: "90 min" }
+  { id: "post-surgery", name: "Post-Surgery Care", duration: "90 min" },
+  { id: "others", name: "Other Services", duration: "60 min" }
 ];
 
 function BookNurseContent() {
@@ -71,9 +72,22 @@ function BookNurseContent() {
 
     // Check if a nurse is pre-selected from URL params
     const preSelectedNurse = searchParams.get('nurse');
+    const preSelectedService = searchParams.get('service');
+
     if (preSelectedNurse) {
       setSelectedNurse(preSelectedNurse);
-      setStep(3); // Skip to schedule step since nurse is already selected
+
+      // If service is also preselected, skip to schedule step
+      if (preSelectedService) {
+        setSelectedService(preSelectedService);
+        setStep(3); // Skip to schedule step since both nurse and service are selected
+      } else {
+        // If only nurse is selected, go to service selection but skip nurse selection
+        setStep(1); // Start with service selection
+      }
+    } else if (preSelectedService) {
+      setSelectedService(preSelectedService);
+      setStep(2); // Go to nurse selection since service is preselected
     }
   }, [session, status, router, searchParams]);
 
@@ -83,6 +97,7 @@ function BookNurseContent() {
       const res = await fetch("/api/nurses");
       if (res.ok) {
         const data = await res.json();
+        console.log("Loaded nurses:", data.length, data);
         setNurses(data);
       } else {
         console.error("Failed to load nurses");
@@ -140,19 +155,40 @@ function BookNurseContent() {
 
   const filteredNurses = selectedService
     ? nurses.filter(nurse => {
-        if (!nurse.isAvailable || !nurse.isVerified) return false;
+        // For debugging - let's be more lenient with availability check
+        // Show nurses that are verified, and either available or on duty
+        if (!nurse.isVerified) return false;
+
+        // Show nurse if they are available
+        if (!nurse.isAvailable) return false;
+
+        // If "others" is selected, show all available nurses
+        if (selectedService === "others") {
+          return true;
+        }
 
         const serviceMap: { [key: string]: string[] } = {
-          "blood-pressure": ["CARDIOLOGY", "GENERAL"],
-          "medication": ["GENERAL", "CARDIOLOGY", "PEDIATRICS"],
-          "wound-care": ["GENERAL", "ORTHOPEDICS"],
-          "diabetes-care": ["GENERAL", "CARDIOLOGY"],
-          "general-checkup": ["GENERAL"],
-          "post-surgery": ["GENERAL", "ORTHOPEDICS"]
+          "blood-pressure": ["Cardiology", "General Medicine", "Critical Care"],
+          "medication": ["General Medicine", "Cardiology", "Pediatrics", "Geriatrics"],
+          "wound-care": ["General Medicine", "Orthopedics", "Surgical Care"],
+          "diabetes-care": ["General Medicine", "Cardiology", "Endocrinology"],
+          "general-checkup": ["General Medicine", "Family Medicine"],
+          "post-surgery": ["General Medicine", "Orthopedics", "Surgical Care"]
         };
-        return serviceMap[selectedService]?.includes(nurse.department);
+
+        // Check if nurse has any of the required specialties for this service
+        const requiredSpecialties = serviceMap[selectedService] || [];
+        return requiredSpecialties.some(specialty =>
+          nurse.specialties?.includes(specialty) ||
+          nurse.department === specialty.toUpperCase().replace(/\s+/g, '_')
+        );
       })
-    : nurses.filter(nurse => nurse.isAvailable && nurse.isVerified);
+    : nurses.filter(nurse => nurse.isVerified && nurse.isAvailable);
+
+  // Debug logging
+  console.log("All nurses:", nurses.length);
+  console.log("Selected service:", selectedService);
+  console.log("Filtered nurses:", filteredNurses.length, filteredNurses);
 
   return (
     <div className="w-full overflow-x-hidden">
@@ -210,12 +246,19 @@ function BookNurseContent() {
                 ))}
               </div>
               <div className="mt-6">
-                <Button 
-                  onClick={() => setStep(2)} 
+                <Button
+                  onClick={() => {
+                    // If nurse is preselected, go directly to schedule
+                    if (selectedNurse) {
+                      setStep(3);
+                    } else {
+                      setStep(2);
+                    }
+                  }}
                   disabled={!selectedService}
                   className="w-full sm:w-auto"
                 >
-                  Continue to Nurse Selection
+                  {selectedNurse ? "Continue to Schedule" : "Continue to Nurse Selection"}
                 </Button>
               </div>
             </CardContent>

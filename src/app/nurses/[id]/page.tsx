@@ -32,27 +32,54 @@ export default function NurseProfilePage() {
   const [nurse, setNurse] = useState<NurseProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadNurse = async () => {
-      try {
-        const res = await fetch(`/api/nurses/${params.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setNurse(data);
-        } else {
-          console.error("Failed to load nurse profile");
-        }
-      } catch (e) {
-        console.error("Error loading nurse:", e);
-      } finally {
-        setLoading(false);
+  const loadNurse = async () => {
+    try {
+      const res = await fetch(`/api/nurses/${params.id}`, {
+        cache: 'no-store', // Always fetch fresh data
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNurse(data);
+      } else {
+        console.error("Failed to load nurse profile");
       }
-    };
+    } catch (e) {
+      console.error("Error loading nurse:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (params.id) {
       loadNurse();
     }
   }, [params.id]);
+
+  // Refresh data when page becomes visible (user switches back to tab)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && nurse) {
+        loadNurse();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [nurse]);
+
+  // Refresh data every 30 seconds to keep status current
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (nurse) {
+        loadNurse();
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [nurse]);
 
   const handleBookNurse = () => {
     router.push(`/book/nurse?nurse=${params.id}`);

@@ -19,8 +19,10 @@ import {
   MapPin,
   Activity,
   Stethoscope,
-  TrendingUp
+  TrendingUp,
+  Plus
 } from "lucide-react";
+import AddPrescriptionModal from "@/components/AddPrescriptionModal";
 
 
 
@@ -29,6 +31,7 @@ export default function PatientDashboard() {
   const router = useRouter();
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showAddPrescription, setShowAddPrescription] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -62,6 +65,11 @@ export default function PatientDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePrescriptionAdded = () => {
+    // Refresh dashboard data to show new prescription
+    loadDashboardData();
   };
 
   if (status === "loading" || loading) {
@@ -269,10 +277,21 @@ export default function PatientDashboard() {
           {/* Active Prescriptions */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Pill className="h-5 w-5" />
-                Active Prescriptions
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Pill className="h-5 w-5" />
+                  Active Prescriptions
+                </CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddPrescription(true)}
+                  className="flex items-center gap-1"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Prescription
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {dashboardData.activePrescriptions.length === 0 ? (
@@ -327,6 +346,13 @@ export default function PatientDashboard() {
           </Card>
         </div>
       </div>
+
+      {/* Add Prescription Modal */}
+      <AddPrescriptionModal
+        isOpen={showAddPrescription}
+        onClose={() => setShowAddPrescription(false)}
+        onSuccess={handlePrescriptionAdded}
+      />
     </div>
   );
 }

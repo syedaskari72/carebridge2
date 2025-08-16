@@ -22,18 +22,18 @@ import {
   Navigation,
   Heart
 } from "lucide-react";
+import { useNurseStatus } from "@/contexts/NurseStatusContext";
 
 
 
 export default function NurseDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { isOnDuty, isAvailable, setIsOnDuty, setIsAvailable, refreshStatus } = useNurseStatus();
   // Removed nurseData state - now using realNurseData from API
   const [realNurseData, setRealNurseData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [isOnDuty, setIsOnDuty] = useState(false);
-  const [isAvailable, setIsAvailable] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -109,6 +109,8 @@ export default function NurseDashboard() {
         alert("Checked in successfully! You are now available for bookings.");
         // Reload dashboard data to reflect changes
         loadNurseDashboardData();
+        // Refresh status in context to sync with mobile menu
+        await refreshStatus();
       }
     } catch (error) {
       console.error("Check-in error:", error);
@@ -132,6 +134,8 @@ export default function NurseDashboard() {
         alert("Checked out successfully! You are now unavailable for bookings.");
         // Reload dashboard data to reflect changes
         loadNurseDashboardData();
+        // Refresh status in context to sync with mobile menu
+        await refreshStatus();
       }
     } catch (error) {
       console.error("Check-out error:", error);

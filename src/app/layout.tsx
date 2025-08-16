@@ -9,6 +9,7 @@ import { SessionProvider } from "@/components/SessionProvider";
 import { ThemeProvider } from "@/components/theme-provider";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { DrawerProvider } from "@/components/DrawerProvider";
+import { NurseStatusProvider } from "@/contexts/NurseStatusContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -64,15 +65,17 @@ export default function RootLayout({
         >
           <SessionProvider>
             <PWAProvider />
-            <DrawerProvider>
-              <div className="flex flex-col min-h-screen w-full overflow-x-hidden">
-                <Header />
-                <main className="flex-1 pb-20 md:pb-0 w-full overflow-x-hidden">{children}</main>
-                <Footer />
-                <BottomNav />
-                <PWAInstallPrompt />
-              </div>
-            </DrawerProvider>
+            <NurseStatusProvider>
+              <DrawerProvider>
+                <div className="flex flex-col min-h-screen w-full overflow-x-hidden">
+                  <Header />
+                  <main className="flex-1 pb-20 md:pb-0 w-full overflow-x-hidden">{children}</main>
+                  <Footer />
+                  <BottomNav />
+                  <PWAInstallPrompt />
+                </div>
+              </DrawerProvider>
+            </NurseStatusProvider>
           </SessionProvider>
         </ThemeProvider>
       </body>

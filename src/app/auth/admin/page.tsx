@@ -30,7 +30,7 @@ export default function AdminLogin() {
       return;
     }
 
-    if (password !== "admin@123") {
+    if (password !== "carebridge#12") {
       setError("Invalid admin password");
       setIsLoading(false);
       return;
