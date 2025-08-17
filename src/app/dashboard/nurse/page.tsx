@@ -20,9 +20,11 @@ import {
   TrendingUp,
   Phone,
   Navigation,
-  Heart
+  Heart,
+  Pill
 } from "lucide-react";
 import { useNurseStatus } from "@/contexts/NurseStatusContext";
+import PrescriptionManager from "@/components/PrescriptionManager";
 
 
 
@@ -353,6 +355,11 @@ export default function NurseDashboard() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Prescription Management */}
+      <div className="mb-8">
+        <PrescriptionManager />
       </div>
 
       {/* Quick Actions */}

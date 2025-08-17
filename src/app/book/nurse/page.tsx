@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, MapPin, Star, User, Phone, Heart, Stethoscope } from "lucide-react";
+import LocationModal from "@/components/LocationModal";
 
 interface Nurse {
   id: string;
@@ -53,6 +54,8 @@ function BookNurseContent() {
   const [step, setStep] = useState(1); // 1: Service, 2: Nurse, 3: Schedule, 4: Confirm
   const [nurses, setNurses] = useState<Nurse[]>([]);
   const [loadingNurses, setLoadingNurses] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [bookingData, setBookingData] = useState<any>(null);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -118,31 +121,77 @@ function BookNurseContent() {
         alert("Please select service, date and time");
         return;
       }
-      const payload = {
+
+      // Prepare booking data
+      const bookingPayload = {
         serviceType: selectedService,
         nurseId: selectedNurse || null,
         appointmentDate: selectedDate,
         appointmentTime: selectedTime,
         urgencyLevel: "ROUTINE",
-        address: "Not provided",
         notes: notes || null
       };
+      
+      // Get patient's current location for the booking
+      try {
+        console.log("🌍 Getting your location for the booking...");
+        const { getCurrentLocationWithAddress } = await import("@/lib/geocoding");
+        const locationData = await getCurrentLocationWithAddress();
+        const patientAddress = locationData.address.fullAddress;
+        console.log("📍 Location found:", patientAddress);
+        
+        // Submit booking directly with GPS address
+        await submitBooking({ ...bookingPayload, address: patientAddress });
+      } catch (error) {
+        console.warn("📍 Location access failed:", error);
+        // Store booking data and show location modal
+        setBookingData(bookingPayload);
+        setShowLocationModal(true);
+        return; // Exit here, modal will handle the rest
+      }
+    } catch (error) {
+      console.error("Booking error:", error);
+      alert("Failed to book appointment. Please try again.");
+    }
+  };
 
+  const submitBooking = async (payload: any) => {
+    if (!payload.address) {
+      alert("Address is required for booking");
+      return;
+    }
+
+    try {
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err?.error || "Failed to create booking");
       }
+      
       alert("Booking confirmed! You will receive a confirmation email shortly.");
       router.push("/bookings");
     } catch (error) {
-      console.error("Booking error:", error);
+      console.error("Booking submission error:", error);
       alert("Failed to book appointment. Please try again.");
     }
+  };
+
+  const handleLocationSubmit = (address: string) => {
+    if (bookingData) {
+      submitBooking({ ...bookingData, address });
+    }
+    setShowLocationModal(false);
+    setBookingData(null);
+  };
+
+  const handleLocationCancel = () => {
+    setShowLocationModal(false);
+    setBookingData(null);
   };
 
   if (status === "loading") {
@@ -462,6 +511,13 @@ function BookNurseContent() {
             </CardContent>
           </Card>
         )}
+        
+        {/* Location Modal */}
+        <LocationModal
+          isOpen={showLocationModal}
+          onClose={handleLocationCancel}
+          onAddressSubmit={handleLocationSubmit}
+        />
       </div>
     </div>
   );

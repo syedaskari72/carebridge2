@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { X, User, Settings, LogOut, Home, Calendar, Users, MessageSquare, Shield, Activity, MapPin } from "lucide-react";
+import NativePWAInstall from "@/components/NativePWAInstall";
 import { useNurseStatus } from "@/contexts/NurseStatusContext";
 
 interface SideDrawerProps {
@@ -382,6 +383,12 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
                   <Settings className="h-5 w-5" />
                   <span>Settings</span>
                 </Link>
+                
+                {/* PWA Install Button */}
+                <div className="px-3 py-2">
+                  <NativePWAInstall />
+                </div>
+                
                 <button
                   onClick={handleSignOut}
                   className="flex items-center space-x-3 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors w-full"

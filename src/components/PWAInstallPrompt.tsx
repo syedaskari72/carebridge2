@@ -41,11 +41,16 @@ export default function PWAInstallPrompt() {
 
     // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
+      console.log('beforeinstallprompt event fired in PWAInstallPrompt');
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
 
-      // Show prompt immediately for better mobile experience
-      setShowPrompt(true);
+      // Only show full-screen prompt if InstallButton isn't already handling it
+      setTimeout(() => {
+        if (!isInstalled) {
+          setShowPrompt(true);
+        }
+      }, 5000); // Delay to let header InstallButton show first
     };
 
     // Listen for app installed event
@@ -56,27 +61,8 @@ export default function PWAInstallPrompt() {
       localStorage.removeItem('pwa-install-dismissed');
     };
 
-    // For mobile devices, show install prompt even without beforeinstallprompt
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-    if (isMobile && !isInstalled) {
-      // Show a custom install prompt for mobile users after a short delay
-      const timer = setTimeout(() => {
-        if (!isInstalled) {
-          setShowPrompt(true);
-        }
-      }, 2000); // Show after 2 seconds
-
-      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.addEventListener('appinstalled', handleAppInstalled);
-
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-        window.removeEventListener('appinstalled', handleAppInstalled);
-      };
-    }
+    // Only show prompt when we actually have the native install capability
+    // Don't show for iOS or other browsers without beforeinstallprompt support
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
@@ -88,29 +74,27 @@ export default function PWAInstallPrompt() {
   }, [isInstalled]);
 
   const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      // Use native install prompt if available
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    if (deferredPrompt && !isIOS) {
+      try {
+        console.log('Using native install prompt from PWAInstallPrompt');
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
 
-      if (outcome === 'accepted') {
+        console.log('Install prompt outcome:', outcome);
+        if (outcome === 'accepted') {
+          setShowPrompt(false);
+        }
+
+        setDeferredPrompt(null);
+      } catch (error) {
+        console.error('Install prompt failed:', error);
+        // Don't show fallback alert for the main prompt - just dismiss
         setShowPrompt(false);
       }
-
-      setDeferredPrompt(null);
     } else {
-      // For devices without beforeinstallprompt, show manual instructions
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const isAndroid = /Android/i.test(navigator.userAgent);
-
-      if (isIOS) {
-        alert('To install CareBridge:\n1. Tap the Share button (📤)\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" to install');
-      } else if (isAndroid) {
-        alert('To install CareBridge:\n1. Tap the menu (⋮) in your browser\n2. Tap "Add to Home screen"\n3. Tap "Add" to install');
-      } else {
-        alert('To install CareBridge:\n1. Look for the install icon in your browser address bar\n2. Click it to install the app');
-      }
-
+      // For iOS and fallback cases, don't show alert here - let InstallButton handle it
       setShowPrompt(false);
     }
   };

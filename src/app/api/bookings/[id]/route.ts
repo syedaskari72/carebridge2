@@ -65,8 +65,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       if (booking.nurseId !== nurse?.id) {
         return NextResponse.json({ error: "Access denied" }, { status: 403 });
       }
-      // Nurses can accept/decline/complete
-      if (!["CONFIRMED", "CANCELLED", "COMPLETED"].includes(status)) {
+      // Nurses can accept/decline/start/complete
+      if (!["CONFIRMED", "CANCELLED", "IN_PROGRESS", "COMPLETED"].includes(status)) {
         return NextResponse.json({ error: "Invalid status transition" }, { status: 400 });
       }
     } else if (session.user.userType === "PATIENT") {

@@ -75,6 +75,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { serviceType, nurseId, appointmentDate, appointmentTime, urgencyLevel, address, notes } = body;
 
+    // Map frontend serviceType to database ServiceType enum
+    const mapServiceType = (frontendType: string): "NURSE_VISIT" | "LAB_SERVICE" | "EMERGENCY_SERVICE" => {
+      if (urgencyLevel === "EMERGENCY") return "EMERGENCY_SERVICE";
+      if (frontendType === "lab-test" || frontendType === "blood-test") return "LAB_SERVICE";
+      return "NURSE_VISIT"; // Default to nurse visit for all other services
+    };
+
+    const dbServiceType = mapServiceType(serviceType);
+
     // Calculate estimated cost if nurse is selected
     let estimatedCost = null;
     if (nurseId) {
@@ -99,7 +108,7 @@ export async function POST(request: NextRequest) {
       data: {
         patientId: patient.id,
         nurseId: nurseId || null,
-        serviceType,
+        serviceType: dbServiceType,
         appointmentDate: new Date(appointmentDate),
         appointmentTime,
         urgencyLevel,

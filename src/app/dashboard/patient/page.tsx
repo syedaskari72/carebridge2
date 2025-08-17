@@ -23,6 +23,7 @@ import {
   Plus
 } from "lucide-react";
 import AddPrescriptionModal from "@/components/AddPrescriptionModal";
+import BookingStatusIndicator from "@/components/BookingStatusIndicator";
 
 
 
@@ -66,6 +67,18 @@ export default function PatientDashboard() {
       setLoading(false);
     }
   };
+
+  // Auto-refresh dashboard data every 30 seconds for real-time updates
+  useEffect(() => {
+    if (!session || session.user.userType !== "PATIENT") return;
+    
+    const interval = setInterval(() => {
+      console.log("🔄 Auto-refreshing patient dashboard...");
+      loadDashboardData();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [session]);
 
   const handlePrescriptionAdded = () => {
     // Refresh dashboard data to show new prescription
@@ -219,9 +232,12 @@ export default function PatientDashboard() {
                   <div key={appointment.id} className="p-3 border rounded-lg">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-medium text-sm sm:text-base">{appointment.type}</h3>
-                      <Badge variant={appointment.status === 'confirmed' ? 'default' : 'secondary'}>
-                        {appointment.status}
-                      </Badge>
+                      <BookingStatusIndicator
+                        bookingId={appointment.id}
+                        initialStatus={appointment.status}
+                        userType="PATIENT"
+                        onStatusChange={() => loadDashboardData()}
+                      />
                     </div>
                     <p className="text-sm text-muted-foreground">{appointment.provider}</p>
                     <div className="flex items-center gap-2 mt-2 text-xs sm:text-sm text-muted-foreground">

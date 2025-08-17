@@ -55,8 +55,10 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Filter active bookings (only confirmed or in-progress)
-    const activeBookings = allBookings.filter(b => b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS');
+    // Filter active bookings (pending, confirmed, or in-progress)
+    const activeBookings = allBookings.filter(b => 
+      b.status === 'PENDING' || b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS'
+    );
 
     // Get today's assignments (only confirmed or in-progress)
     const todaysAppointments = activeBookings.filter(booking => {

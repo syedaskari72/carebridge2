@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useDrawer } from "@/components/DrawerProvider";
-import InstallButton from "@/components/InstallButton";
+import NativePWAInstall from "@/components/NativePWAInstall";
 import { Menu, ChevronDown, User } from "lucide-react";
 import { useNurseStatus } from "@/contexts/NurseStatusContext";
 
@@ -119,7 +119,7 @@ export default function Header() {
 
           {/* CTA Button & User Menu */}
           <div className="hidden md:flex items-center space-x-4">
-            <InstallButton />
+            <NativePWAInstall />
             <ThemeToggle />
             {status === "loading" ? (
               <div className="text-sm text-muted-foreground">Loading...</div>
@@ -170,9 +170,6 @@ export default function Header() {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-2">
-            <div className="sm:hidden">
-              <InstallButton />
-            </div>
             <ThemeToggle />
             {/* Nurse status indicator for mobile */}
             {session?.user.userType === "NURSE" && (
