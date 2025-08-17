@@ -118,12 +118,35 @@ self.addEventListener('push', (event) => {
 
 // Notification click event
 self.addEventListener('notificationclick', (event) => {
+  console.log('🔔 Notification clicked:', event.action);
   event.notification.close();
 
-  if (event.action === 'explore') {
+  if (event.action === 'open' || !event.action) {
     event.waitUntil(
-      clients.openWindow('/')
+      clients.matchAll({ type: 'window', includeUncontrolled: true })
+        .then((clientList) => {
+          // Check if app is already open
+          for (const client of clientList) {
+            if (client.url.includes(self.location.origin) && 'focus' in client) {
+              return client.focus();
+            }
+          }
+          // If not open, open new window
+          if (clients.openWindow) {
+            const targetUrl = event.notification.data?.url || '/';
+            return clients.openWindow(targetUrl);
+          }
+        })
     );
+  }
+});
+
+// Handle PWA installation events
+self.addEventListener('message', (event) => {
+  console.log('💬 Message received in SW:', event.data);
+  
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
 });
 

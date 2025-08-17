@@ -373,6 +373,11 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
 
           {/* Footer */}
           <div className="border-t border-border p-4">
+            {/* PWA Install Button - Always show at top of footer */}
+            <div className="mb-3">
+              <NativePWAInstall />
+            </div>
+            
             {session ? (
               <div className="space-y-2">
                 <Link
@@ -383,11 +388,6 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
                   <Settings className="h-5 w-5" />
                   <span>Settings</span>
                 </Link>
-                
-                {/* PWA Install Button */}
-                <div className="px-3 py-2">
-                  <NativePWAInstall />
-                </div>
                 
                 <button
                   onClick={handleSignOut}

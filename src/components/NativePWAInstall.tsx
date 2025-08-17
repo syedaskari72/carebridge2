@@ -19,30 +19,53 @@ export default function NativePWAInstall() {
   const [isInstalled, setIsInstalled] = useState(false);
   const [showButton, setShowButton] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Check if app is already installed
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    const isIOSStandalone = (window.navigator as any).standalone === true;
-    
-    if (isStandalone || isIOSStandalone) {
+    const checkInstallStatus = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const isIOSStandalone = (window.navigator as any).standalone === true;
+      const isInWebApk = window.matchMedia('(display-mode: minimal-ui)').matches;
+      
+      return isStandalone || isIOSStandalone || isInWebApk;
+    };
+
+    if (checkInstallStatus()) {
       setIsInstalled(true);
+      setIsLoading(false);
       return;
     }
 
-    // Device detection
+    // Device and browser detection
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isAndroid = /Android/i.test(navigator.userAgent);
-    const supportsBrowsers = /Chrome|CriOS|Edge|EdgiOS/.test(navigator.userAgent);
+    const isChrome = /Chrome/.test(navigator.userAgent) && !/Edg/.test(navigator.userAgent);
+    const isEdge = /Edg/.test(navigator.userAgent);
+    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+    const isFirefox = /Firefox/.test(navigator.userAgent);
+    const isMobile = isIOS || isAndroid;
+    
+    // More permissive support detection - show for most modern browsers
+    const isSupported = 
+      (isIOS && isSafari) || // iOS Safari
+      (isAndroid && (isChrome || isEdge)) || // Android Chrome/Edge
+      (!isMobile && (isChrome || isEdge || isFirefox)) || // Desktop browsers
+      (isMobile && !isIOS); // Any mobile browser on Android
 
     console.log('🔍 PWA Install Detection:', {
       isIOS,
       isAndroid,
-      supportsBrowsers,
+      isChrome,
+      isEdge,
+      isSafari,
+      isFirefox,
+      isMobile,
+      isSupported,
       userAgent: navigator.userAgent.substring(0, 100)
     });
 
-    // Handle beforeinstallprompt for Android/Chrome/Edge
+    // Handle beforeinstallprompt for supported browsers
     const handleBeforeInstallPrompt = (e: Event) => {
       console.log('🎯 Native beforeinstallprompt event captured!', {
         platforms: (e as BeforeInstallPromptEvent).platforms,
@@ -51,6 +74,7 @@ export default function NativePWAInstall() {
       e.preventDefault(); // Prevent default mini-infobar
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowButton(true);
+      setIsLoading(false);
     };
 
     // Handle successful installation
@@ -61,12 +85,32 @@ export default function NativePWAInstall() {
       setDeferredPrompt(null);
     };
 
-    // For iOS, always show the button (they don't support beforeinstallprompt)
-    if (isIOS && supportsBrowsers) {
+    // Show button for supported platforms immediately
+    if (isSupported) {
       setShowButton(true);
+      
+      // Set a reasonable timeout for loading state
+      const loadingTimeout = setTimeout(() => {
+        setIsLoading(false);
+      }, 1500); // Reduced from 2000ms
+      
+      // Clear timeout if beforeinstallprompt fires early
+      const clearLoadingOnPrompt = () => {
+        clearTimeout(loadingTimeout);
+        setIsLoading(false);
+      };
+      
+      window.addEventListener('beforeinstallprompt', clearLoadingOnPrompt, { once: true });
+      
+      return () => {
+        clearTimeout(loadingTimeout);
+        window.removeEventListener('beforeinstallprompt', clearLoadingOnPrompt);
+      };
+    } else {
+      setIsLoading(false);
     }
 
-    // Add event listeners
+    // Add event listeners for all cases
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
@@ -78,73 +122,118 @@ export default function NativePWAInstall() {
 
   const handleInstallClick = async () => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isChrome = /Chrome/.test(navigator.userAgent) && !/Edg/.test(navigator.userAgent);
+    const isEdge = /Edg/.test(navigator.userAgent);
     
     console.log('🚀 Install clicked', {
       hasNativePrompt: !!deferredPrompt,
       isIOS,
+      isAndroid,
+      isChrome,
+      isEdge,
       platforms: deferredPrompt?.platforms
     });
 
+    // Priority 1: Use native install prompt if available
     if (deferredPrompt && !isIOS) {
       try {
-        console.log('📱 Triggering native PWA install prompt...', {
-          platforms: deferredPrompt.platforms,
-          userAgent: navigator.userAgent.substring(0, 50)
-        });
+        console.log('📱 Using native PWA install prompt');
         
-        // This should show the native "Install app?" dialog (NOT "Add to Home Screen")
-        const promptResult = await deferredPrompt.prompt();
-        console.log('📱 Prompt shown, result:', promptResult);
-        
+        await deferredPrompt.prompt();
         const choiceResult = await deferredPrompt.userChoice;
-        console.log('📊 User choice result:', choiceResult);
+        
+        console.log('📊 User choice:', choiceResult.outcome);
         
         if (choiceResult.outcome === 'accepted') {
-          console.log('🎉 User accepted PWA installation');
+          console.log('🎉 PWA installation accepted');
           setShowButton(false);
-        } else {
-          console.log('❌ User dismissed PWA installation');
+          setIsInstalled(true);
         }
         
         setDeferredPrompt(null);
+        return;
       } catch (error) {
-        console.error('❌ Native PWA install failed:', error);
-        // Only show fallback if native really failed
-        alert('PWA installation failed. Please try: Browser menu (⋮) → "Install app"');
-      }
-    } else if (isIOS) {
-      console.log('📱 Showing iOS install instructions');
-      setShowIOSModal(true);
-    } else {
-      // Don't show fallback on Android Chrome - they should have native prompt
-      const isAndroidChrome = /Android.*Chrome/i.test(navigator.userAgent);
-      if (isAndroidChrome) {
-        console.log('🤖 Android Chrome detected but no native prompt - user likely dismissed or app already installable');
-        alert('To install CareBridge: Look for the install icon in your browser address bar or try refreshing the page');
-      } else {
-        console.log('🔄 No native prompt available, showing instructions');
-        alert('To install CareBridge:\n1. Look for the install icon (⬇️) in your browser address bar\n2. Or use browser menu: ⋮ → "Install app"');
+        console.error('❌ Native install prompt failed:', error);
+        // Continue to fallback methods below
       }
     }
+
+    // Priority 2: iOS Safari instructions
+    if (isIOS) {
+      console.log('📱 Showing iOS install modal');
+      setShowIOSModal(true);
+      return;
+    }
+
+    // Priority 3: Android Chrome/Edge fallback
+    if (isAndroid && (isChrome || isEdge)) {
+      console.log('🤖 Android fallback instructions');
+      alert(
+        'To install CareBridge as an app:\n\n' +
+        '1. Tap the menu (⋮) in your browser\n' +
+        '2. Look for "Add to Home screen" or "Install app"\n' +
+        '3. Tap it and follow the prompts\n\n' +
+        'Or look for an install icon (⬇️) in the address bar'
+      );
+      return;
+    }
+
+    // Priority 4: Desktop Chrome/Edge fallback
+    if (!isAndroid && !isIOS && (isChrome || isEdge)) {
+      console.log('💻 Desktop fallback instructions');
+      alert(
+        'To install CareBridge as an app:\n\n' +
+        '1. Look for the install icon (⬇️) in your browser address bar\n' +
+        '2. Or click the menu (⋮) → "Install CareBridge"\n' +
+        '3. Click "Install" in the popup\n\n' +
+        'If you don\'t see these options, try refreshing the page'
+      );
+      return;
+    }
+
+    // Priority 5: Other browsers
+    console.log('🌐 Generic browser instructions');
+    alert(
+      'To add CareBridge to your device:\n\n' +
+      '• Look for "Add to Home Screen" in your browser menu\n' +
+      '• Or bookmark this page for quick access\n' +
+      '• Some browsers may show an install option in the address bar'
+    );
   };
 
-  // If already installed, show "App Already Installed" with disabled button
+  // If still loading, show loading state
+  if (isLoading) {
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        disabled
+        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 border-gray-200 dark:border-gray-800"
+      >
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+        <span className="text-gray-600 dark:text-gray-400">Checking...</span>
+      </Button>
+    );
+  }
+
+  // If already installed, show "App Installed" with checkmark
   if (isInstalled) {
     return (
       <Button
         size="sm"
         variant="outline"
         disabled
-        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-gray-50 to-gray-50 dark:from-gray-950 dark:to-gray-950 border-gray-200 dark:border-gray-800 cursor-not-allowed"
-        title="CareBridge is already installed"
+        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-green-200 dark:border-green-800"
+        title="CareBridge is already installed on this device"
       >
-        <CheckCircle className="h-4 w-4 text-gray-500" />
-        <span className="text-gray-500">App Already Installed</span>
+        <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+        <span className="text-green-700 dark:text-green-300">App Installed</span>
       </Button>
     );
   }
 
-  // Don't show if not ready
+  // Don't show if not supported or not ready
   if (!showButton) {
     return null;
   }
@@ -155,12 +244,12 @@ export default function NativePWAInstall() {
         onClick={handleInstallClick}
         size="sm"
         variant="outline"
-        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-green-200 dark:border-green-800 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900 dark:hover:to-emerald-900"
-        title={deferredPrompt ? "Install CareBridge as native app" : "Install CareBridge"}
+        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950 border-blue-200 dark:border-blue-800 hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900 dark:hover:to-cyan-900 transition-all duration-200"
+        title="Install CareBridge as an app on your device"
       >
-        <Download className="h-4 w-4 text-green-600 dark:text-green-400" />
-        <span className="text-green-700 dark:text-green-300">
-          {deferredPrompt ? "Install as App" : "Install App"}
+        <Download className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <span className="text-blue-700 dark:text-blue-300 font-medium">
+          Install App
         </span>
       </Button>
 
@@ -172,8 +261,8 @@ export default function NativePWAInstall() {
               <span className="text-white font-bold text-xl">C</span>
             </div>
             <div>
-              <h3 className="text-lg font-semibold">Install CareBridge</h3>
-              <p className="text-sm text-muted-foreground">Add to your home screen for easy access</p>
+              <h3 className="text-lg font-semibold">Add CareBridge to Home Screen</h3>
+              <p className="text-sm text-muted-foreground">Get app-like experience with offline access</p>
             </div>
           </div>
           
