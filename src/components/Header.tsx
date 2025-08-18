@@ -118,23 +118,22 @@ export default function Header() {
           </nav>
 
           {/* CTA Button & User Menu */}
-          <div className="hidden md:flex items-center space-x-4">
-            <NativePWAInstall />
+          <div className="hidden md:flex items-center space-x-3">
             <ThemeToggle />
             {status === "loading" ? (
               <div className="text-sm text-muted-foreground">Loading...</div>
             ) : status === "authenticated" && session ? (
               <>
                 {session.user.userType === "PATIENT" && (
-                  <Button asChild>
-                    <Link href="/book">Book a Nurse</Link>
+                  <Button asChild size="sm">
+                    <Link href="/book">Book Nurse</Link>
                   </Button>
                 )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center space-x-2">
+                    <Button variant="ghost" size="sm" className="flex items-center space-x-2">
                       <User className="h-4 w-4" />
-                      <span>{session.user.name}</span>
+                      <span className="max-w-24 truncate">{session.user.name}</span>
                       <ChevronDown className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -158,11 +157,14 @@ export default function Header() {
               </>
             ) : (
               <>
-                <Button asChild>
-                  <Link href="/book">Book a Nurse</Link>
+                <Button asChild size="sm">
+                  <Link href="/book">Book Nurse</Link>
                 </Button>
-                <Button variant="ghost" asChild>
+                <Button variant="ghost" asChild size="sm">
                   <Link href="/auth/signin">Sign In</Link>
+                </Button>
+                <Button asChild size="sm">
+                  <Link href="/auth/signup">Sign Up</Link>
                 </Button>
               </>
             )}
