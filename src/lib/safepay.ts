@@ -42,42 +42,72 @@ export async function createSafePayOrder(data: SafePayOrderData): Promise<SafePa
   
   const authToken = Buffer.from(`${SAFEPAY_CONFIG.apiKey}:${SAFEPAY_CONFIG.apiSecret}`).toString('base64');
   
-  // Create payment tracker with all required fields
-  const payload = {
+  // Step 1: Create tracker
+  const trackerPayload = {
     client: SAFEPAY_CONFIG.apiKey,
     amount: Math.round(data.amount),
     currency: 'PKR',
     order_id: data.orderId,
     source: 'custom',
     environment: SAFEPAY_CONFIG.environment,
-    cancel_url: data.cancelUrl,
-    redirect_url: data.redirectUrl,
-    webhook_url: data.webhookUrl,
   };
 
-  console.log('SafePay payload:', JSON.stringify(payload, null, 2));
+  console.log('SafePay tracker payload:', JSON.stringify(trackerPayload, null, 2));
 
-  const response = await fetch(`${SAFEPAY_CONFIG.baseUrl}/order/v1/init`, {
+  const trackerResponse = await fetch(`${SAFEPAY_CONFIG.baseUrl}/order/v1/init`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Basic ${authToken}`,
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(trackerPayload),
   });
 
-  const responseText = await response.text();
-  console.log('SafePay response:', responseText);
+  const trackerText = await trackerResponse.text();
+  console.log('SafePay tracker response:', trackerText);
 
-  if (!response.ok) {
-    throw new Error(`SafePay error: ${response.statusText} - ${responseText}`);
+  if (!trackerResponse.ok) {
+    throw new Error(`SafePay tracker error: ${trackerResponse.statusText} - ${trackerText}`);
   }
 
-  const result = JSON.parse(responseText);
-  const tracker = result.data.token;
+  const trackerResult = JSON.parse(trackerText);
+  const tracker = trackerResult.data.token;
   
-  // Build checkout URL with all required parameters
-  const checkoutUrl = `${SAFEPAY_CONFIG.baseUrl}/checkout/pay?tracker=${tracker}&env=${SAFEPAY_CONFIG.environment}&source=custom`;
+  // Step 2: Create payment intent
+  const paymentPayload = {
+    token: tracker,
+    amount: Math.round(data.amount),
+    currency: 'PKR',
+    customer: {
+      name: data.customerName,
+      email: data.customerEmail,
+      phone: data.customerPhone.replace(/[\s\-\+]/g, '').replace(/^92/, '0'),
+    },
+    redirect_url: data.redirectUrl,
+    cancel_url: data.cancelUrl,
+    webhook_url: data.webhookUrl,
+  };
+
+  console.log('SafePay payment payload:', JSON.stringify(paymentPayload, null, 2));
+
+  const paymentResponse = await fetch(`${SAFEPAY_CONFIG.baseUrl}/payments/v1/create`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Basic ${authToken}`,
+    },
+    body: JSON.stringify(paymentPayload),
+  });
+
+  const paymentText = await paymentResponse.text();
+  console.log('SafePay payment response:', paymentText);
+
+  if (!paymentResponse.ok) {
+    throw new Error(`SafePay payment error: ${paymentResponse.statusText} - ${paymentText}`);
+  }
+  
+  // Build checkout URL
+  const checkoutUrl = `${SAFEPAY_CONFIG.baseUrl}/checkout/pay?tracker=${tracker}&env=${SAFEPAY_CONFIG.environment}`;
   console.log('Checkout URL:', checkoutUrl);
   
   return {
