@@ -7,6 +7,8 @@ export async function POST(req: Request) {
     const body = await req.text();
     const signature = req.headers.get('x-sfpy-signature') || '';
 
+    console.log('SafePay Webhook received:', body);
+
     // Verify webhook signature
     if (signature && !verifySafePayWebhook(body, signature)) {
       console.error('Invalid webhook signature');
@@ -14,30 +16,45 @@ export async function POST(req: Request) {
     }
 
     const payload = JSON.parse(body);
-    const { 
-      data: {
-        token,
-        state,
-        reference,
-        amount,
+    console.log('SafePay Webhook payload:', JSON.stringify(payload, null, 2));
+
+    // Handle subscription events
+    if (payload.event) {
+      const { event, data } = payload;
+      
+      switch (event) {
+        case 'subscription.activated':
+        case 'subscription.created':
+        case 'payment.succeeded':
+          await handlePaymentSuccess(data);
+          break;
+
+        case 'subscription.cancelled':
+        case 'subscription.payment_failed':
+        case 'payment.failed':
+          await handlePaymentFailed(data);
+          break;
+
+        default:
+          console.log('Unhandled webhook event:', event);
       }
-    } = payload;
+    } else {
+      // Legacy format
+      const { token, state, reference, amount } = payload.data || payload;
+      
+      switch (state) {
+        case 'PAID':
+          await handlePaymentSuccess({ token, reference, amount: amount / 100 });
+          break;
 
-    console.log('SafePay Webhook:', { token, state, reference });
+        case 'FAILED':
+        case 'CANCELLED':
+          await handlePaymentFailed({ token });
+          break;
 
-    // Handle different payment states
-    switch (state) {
-      case 'PAID':
-        await handlePaymentSuccess(token, reference, amount / 100); // Convert from paisas
-        break;
-
-      case 'FAILED':
-      case 'CANCELLED':
-        await handlePaymentFailed(token);
-        break;
-
-      default:
-        console.log('Unhandled payment state:', state);
+        default:
+          console.log('Unhandled payment state:', state);
+      }
     }
 
     return NextResponse.json({ received: true });
@@ -47,19 +64,26 @@ export async function POST(req: Request) {
   }
 }
 
-async function handlePaymentSuccess(token: string, reference: string, amount: number) {
+async function handlePaymentSuccess(data: any) {
+  const token = data.token || data.tracker || data.id;
+  const reference = data.reference || data.transaction_id || token;
+  const amount = data.amount ? (data.amount / 100) : 0;
+
+  console.log('Processing payment success:', { token, reference, amount });
+
   const subscription = await prisma.nurseSubscription.findFirst({
     where: { 
       OR: [
         { xpayOrderId: token },
         { xpaySubscriptionId: token },
+        { id: token },
       ]
     },
     include: { plan: true },
   });
 
   if (!subscription) {
-    console.error('Subscription not found:', token);
+    console.error('Subscription not found for token:', token);
     return;
   }
 
@@ -82,20 +106,28 @@ async function handlePaymentSuccess(token: string, reference: string, amount: nu
     },
   });
 
-  console.log('Subscription activated:', subscription.id);
+  console.log('✅ Subscription activated:', subscription.id);
 }
 
-async function handlePaymentFailed(token: string) {
+async function handlePaymentFailed(data: any) {
+  const token = data.token || data.tracker || data.id;
+  
+  console.log('Processing payment failure:', { token });
+
   const subscription = await prisma.nurseSubscription.findFirst({
     where: { 
       OR: [
         { xpayOrderId: token },
         { xpaySubscriptionId: token },
+        { id: token },
       ]
     },
   });
 
-  if (!subscription) return;
+  if (!subscription) {
+    console.error('Subscription not found for token:', token);
+    return;
+  }
 
   await prisma.nurseSubscription.update({
     where: { id: subscription.id },
@@ -112,5 +144,5 @@ async function handlePaymentFailed(token: string) {
     });
   }
 
-  console.log('Payment failed:', subscription.id);
+  console.log('❌ Payment failed:', subscription.id);
 }

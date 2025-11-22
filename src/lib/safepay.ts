@@ -1,11 +1,9 @@
 import crypto from 'crypto';
+import { Safepay } from '@sfpy/node-sdk';
 
 const SAFEPAY_CONFIG = {
   apiKey: process.env.SAFEPAY_API_KEY || '',
   apiSecret: process.env.SAFEPAY_API_SECRET || '',
-  baseUrl: process.env.SAFEPAY_ENVIRONMENT === 'production' 
-    ? 'https://api.getsafepay.com' 
-    : 'https://sandbox.api.getsafepay.com',
   environment: process.env.SAFEPAY_ENVIRONMENT || 'sandbox',
 };
 
@@ -32,92 +30,95 @@ interface SafePayResponse {
   checkout_url: string;
 }
 
-
-
-
-
-// Create payment order with SafePay Order API v1
-export async function createSafePayOrder(data: SafePayOrderData): Promise<SafePayResponse> {
+// Initialize SafePay SDK
+function getSafepayClient() {
   validateConfig();
+  const webhookSecret = process.env.SAFEPAY_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    throw new Error('SAFEPAY_WEBHOOK_SECRET is required');
+  }
   
-  const authToken = Buffer.from(`${SAFEPAY_CONFIG.apiKey}:${SAFEPAY_CONFIG.apiSecret}`).toString('base64');
+  return new Safepay({
+    environment: SAFEPAY_CONFIG.environment as 'sandbox' | 'production',
+    apiKey: SAFEPAY_CONFIG.apiKey,
+    v1Secret: SAFEPAY_CONFIG.apiSecret,
+    webhookSecret: webhookSecret,
+  });
+}
+
+// Create payment order using SafePay SDK
+export async function createSafePayOrder(data: SafePayOrderData): Promise<SafePayResponse> {
+  const safepay = getSafepayClient();
   
-  // Step 1: Create tracker
-  const trackerPayload = {
-    client: SAFEPAY_CONFIG.apiKey,
+  console.log('Creating SafePay payment with SDK...');
+  
+  // Step 1: Create payment
+  const payment = await safepay.payments.create({
     amount: Math.round(data.amount),
     currency: 'PKR',
-    order_id: data.orderId,
+  });
+  
+  console.log('SafePay payment created:', payment);
+  
+  // Step 2: Create checkout session
+  const checkout = await safepay.checkout.create({
+    token: payment.token,
+    orderId: data.orderId,
     source: 'custom',
-    environment: SAFEPAY_CONFIG.environment,
-  };
-
-  console.log('SafePay tracker payload:', JSON.stringify(trackerPayload, null, 2));
-
-  const trackerResponse = await fetch(`${SAFEPAY_CONFIG.baseUrl}/order/v1/init`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Basic ${authToken}`,
-    },
-    body: JSON.stringify(trackerPayload),
+    cancelUrl: data.cancelUrl,
+    redirectUrl: data.redirectUrl,
+    webhooks: true,
   });
-
-  const trackerText = await trackerResponse.text();
-  console.log('SafePay tracker response:', trackerText);
-
-  if (!trackerResponse.ok) {
-    throw new Error(`SafePay tracker error: ${trackerResponse.statusText} - ${trackerText}`);
-  }
-
-  const trackerResult = JSON.parse(trackerText);
-  const tracker = trackerResult.data.token;
   
-  // Step 2: Create payment intent
-  const paymentPayload = {
-    token: tracker,
-    amount: Math.round(data.amount),
-    currency: 'PKR',
-    customer: {
-      name: data.customerName,
-      email: data.customerEmail,
-      phone: data.customerPhone.replace(/[\s\-\+]/g, '').replace(/^92/, '0'),
-    },
-    redirect_url: data.redirectUrl,
-    cancel_url: data.cancelUrl,
-    webhook_url: data.webhookUrl,
-  };
-
-  console.log('SafePay payment payload:', JSON.stringify(paymentPayload, null, 2));
-
-  const paymentResponse = await fetch(`${SAFEPAY_CONFIG.baseUrl}/payments/v1/create`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Basic ${authToken}`,
-    },
-    body: JSON.stringify(paymentPayload),
-  });
-
-  const paymentText = await paymentResponse.text();
-  console.log('SafePay payment response:', paymentText);
-
-  if (!paymentResponse.ok) {
-    throw new Error(`SafePay payment error: ${paymentResponse.statusText} - ${paymentText}`);
-  }
-  
-  // Build checkout URL
-  const checkoutUrl = `${SAFEPAY_CONFIG.baseUrl}/checkout/pay?tracker=${tracker}&env=${SAFEPAY_CONFIG.environment}`;
-  console.log('Checkout URL:', checkoutUrl);
+  console.log('SafePay checkout created:', checkout);
   
   return {
-    token: tracker,
-    checkout_url: checkoutUrl,
+    token: payment.token,
+    checkout_url: checkout.url,
   };
 }
 
-// Create subscription payment
+// Create subscription payment using SafePay SDK
 export async function createSafePaySubscription(data: SafePayOrderData): Promise<SafePayResponse> {
+  const safepay = getSafepayClient();
+  
+  console.log('Creating SafePay subscription with SDK...');
+  
+  try {
+    // Try to create subscription if SDK supports it
+    const subscription = await (safepay as any).subscriptions?.create({
+      amount: Math.round(data.amount),
+      currency: 'PKR',
+      planId: data.orderId,
+      customer: {
+        name: data.customerName,
+        email: data.customerEmail,
+        phone: data.customerPhone,
+      },
+    });
+    
+    if (subscription) {
+      console.log('SafePay subscription created:', subscription);
+      
+      const checkout = await safepay.checkout.create({
+        token: subscription.token,
+        orderId: data.orderId,
+        source: 'custom',
+        cancelUrl: data.cancelUrl,
+        redirectUrl: data.redirectUrl,
+        webhooks: true,
+      });
+      
+      return {
+        token: subscription.token,
+        checkout_url: checkout.url,
+      };
+    }
+  } catch (error) {
+    console.log('Subscription not supported, falling back to one-time payment');
+  }
+  
+  // Fallback to one-time payment
   return createSafePayOrder(data);
 }
 
@@ -130,8 +131,12 @@ export async function cancelSafePaySubscription(subscriptionId: string): Promise
 
 // Verify SafePay webhook signature
 export function verifySafePayWebhook(payload: string, signature: string): boolean {
-  validateConfig();
-  const hmac = crypto.createHmac('sha256', SAFEPAY_CONFIG.apiSecret);
+  const webhookSecret = process.env.SAFEPAY_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    throw new Error('SAFEPAY_WEBHOOK_SECRET is not configured');
+  }
+  
+  const hmac = crypto.createHmac('sha256', webhookSecret);
   hmac.update(payload);
   const generatedSignature = hmac.digest('hex');
   
