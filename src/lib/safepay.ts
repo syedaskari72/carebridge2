@@ -4,8 +4,8 @@ const SAFEPAY_CONFIG = {
   apiKey: process.env.SAFEPAY_API_KEY || '',
   apiSecret: process.env.SAFEPAY_API_SECRET || '',
   baseUrl: process.env.SAFEPAY_ENVIRONMENT === 'production' 
-    ? 'https://getsafepay.com' 
-    : 'https://sandbox.getsafepay.com',
+    ? 'https://api.getsafepay.com' 
+    : 'https://sandbox.api.getsafepay.com',
   environment: process.env.SAFEPAY_ENVIRONMENT || 'sandbox',
 };
 
@@ -36,27 +36,31 @@ interface SafePayResponse {
 
 
 
-// Create payment order with SafePay Payments 2.0
+// Create payment order with SafePay Order API v1
 export async function createSafePayOrder(data: SafePayOrderData): Promise<SafePayResponse> {
   validateConfig();
   
-  // Clean phone number - remove dashes and spaces
-  const cleanPhone = (data.customerPhone || '03000000000').replace(/[-\s]/g, '');
+  // Clean phone number - remove spaces, dashes, and country code
+  const cleanPhone = data.customerPhone.replace(/[\s\-\+]/g, '').replace(/^92/, '0');
   
   const payload = {
-    amount: Math.round(data.amount * 100), // Amount in smallest currency unit (paisas)
+    client: SAFEPAY_CONFIG.apiKey,
+    amount: Math.round(data.amount),
     currency: 'PKR',
-    metadata: {
-      order_id: data.orderId,
-      source: 'carebridge',
-    },
+    order_id: data.orderId,
+    source: 'custom',
+    environment: SAFEPAY_CONFIG.environment,
+    callback_url: data.redirectUrl,
+    webhook_url: data.webhookUrl,
   };
 
   console.log('SafePay payload:', JSON.stringify(payload, null, 2));
+  console.log('SafePay URL:', `${SAFEPAY_CONFIG.baseUrl}/order/v1/init`);
+  console.log('SafePay Auth:', `Basic ${Buffer.from(`${SAFEPAY_CONFIG.apiKey}:${SAFEPAY_CONFIG.apiSecret}`).toString('base64').substring(0, 20)}...`);
 
   const authToken = Buffer.from(`${SAFEPAY_CONFIG.apiKey}:${SAFEPAY_CONFIG.apiSecret}`).toString('base64');
   
-  const response = await fetch(`${SAFEPAY_CONFIG.baseUrl}/api/v2/payments`, {
+  const response = await fetch(`${SAFEPAY_CONFIG.baseUrl}/order/v1/init`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -82,7 +86,7 @@ export async function createSafePayOrder(data: SafePayOrderData): Promise<SafePa
   
   return {
     token: result.data.token,
-    checkout_url: result.data.url,
+    checkout_url: `${SAFEPAY_CONFIG.baseUrl}/checkout/pay/${result.data.token}`,
   };
 }
 
@@ -117,7 +121,7 @@ export async function checkSafePayStatus(token: string): Promise<any> {
   
   const authToken = Buffer.from(`${SAFEPAY_CONFIG.apiKey}:${SAFEPAY_CONFIG.apiSecret}`).toString('base64');
   
-  const response = await fetch(`${SAFEPAY_CONFIG.baseUrl}/payments/v2/${token}`, {
+  const response = await fetch(`${SAFEPAY_CONFIG.baseUrl}/order/v1/status/${token}`, {
     method: 'GET',
     headers: {
       'Authorization': `Basic ${authToken}`,
