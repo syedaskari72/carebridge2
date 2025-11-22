@@ -36,18 +36,47 @@ interface Prescription {
 }
 
 export default function PrescriptionManager() {
+  const [patients, setPatients] = useState<any[]>([]);
+  const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [notes, setNotes] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
-    loadPrescriptions();
+    loadPatients();
   }, []);
 
-  const loadPrescriptions = async () => {
+  const loadPatients = async () => {
     try {
-      const response = await fetch("/api/nurse/prescriptions");
+      const response = await fetch("/api/bookings?scope=nurse");
+      if (response.ok) {
+        const bookings = await response.json();
+        // Get unique patients from active bookings
+        const uniquePatients = bookings
+          .filter((b: any) => ["CONFIRMED", "IN_PROGRESS"].includes(b.status))
+          .reduce((acc: any[], booking: any) => {
+            if (!acc.find(p => p.id === booking.patient.id)) {
+              acc.push({
+                id: booking.patient.id,
+                name: booking.patient.user.name,
+                bookingId: booking.id,
+              });
+            }
+            return acc;
+          }, []);
+        setPatients(uniquePatients);
+      }
+    } catch (error) {
+      console.error("Error loading patients:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadPrescriptions = async (patientId: string) => {
+    try {
+      const response = await fetch(`/api/nurse/patient-prescriptions?patientId=${patientId}`);
       if (response.ok) {
         const data = await response.json();
         setPrescriptions(data);
@@ -56,47 +85,12 @@ export default function PrescriptionManager() {
       }
     } catch (error) {
       console.error("Error loading prescriptions:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleMedicationAction = async (
-    prescriptionId: string,
-    medicationIndex: number,
-    action: "given" | "skip"
-  ) => {
-    const actionKey = `${prescriptionId}-${medicationIndex}`;
-    setActionLoading(actionKey);
-
-    try {
-      const response = await fetch(`/api/nurse/prescriptions/${prescriptionId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          medicationIndex,
-          action,
-          notes: notes[actionKey] || null,
-        }),
-      });
-
-      if (response.ok) {
-        // Refresh prescriptions
-        await loadPrescriptions();
-        // Clear notes
-        setNotes(prev => ({ ...prev, [actionKey]: "" }));
-      } else {
-        const error = await response.json();
-        alert(`Failed to ${action} medication: ${error.error}`);
-      }
-    } catch (error) {
-      console.error(`Error ${action} medication:`, error);
-      alert(`Failed to ${action} medication. Please try again.`);
-    } finally {
-      setActionLoading(null);
-    }
+  const handleViewPrescriptions = async (patientId: string) => {
+    setSelectedPatient(patientId);
+    await loadPrescriptions(patientId);
   };
 
   const updateNotes = (prescriptionId: string, medicationIndex: number, value: string) => {
@@ -115,21 +109,72 @@ export default function PrescriptionManager() {
     );
   }
 
-  if (prescriptions.length === 0) {
+  if (patients.length === 0) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Pill className="h-5 w-5 text-cyan-600" />
-            Patient Prescriptions
+            <User className="h-5 w-5 text-cyan-600" />
+            Patients in Care
           </CardTitle>
           <CardDescription>
-            Medications for your current patients
+            View prescriptions for your current patients
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center py-8">
+          <div className="text-4xl mb-2">👥</div>
+          <p className="text-muted-foreground">No patients currently assigned</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (selectedPatient && prescriptions.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Patient Prescriptions</CardTitle>
+            <Button variant="outline" size="sm" onClick={() => setSelectedPatient(null)}>
+              Back to Patients
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="text-center py-8">
           <div className="text-4xl mb-2">💊</div>
-          <p className="text-muted-foreground">No active prescriptions for current patients</p>
+          <p className="text-muted-foreground">No prescriptions found for this patient</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!selectedPatient) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5 text-cyan-600" />
+            Patients in Care
+          </CardTitle>
+          <CardDescription>
+            View prescriptions for your current patients
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {patients.map((patient) => (
+              <div key={patient.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <h3 className="font-semibold">{patient.name}</h3>
+                  <p className="text-sm text-muted-foreground">Patient ID: {patient.id.slice(0, 8)}</p>
+                </div>
+                <Button size="sm" onClick={() => handleViewPrescriptions(patient.id)}>
+                  <Pill className="h-4 w-4 mr-2" />
+                  View Prescriptions
+                </Button>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
     );
@@ -137,9 +182,14 @@ export default function PrescriptionManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Pill className="h-6 w-6 text-cyan-600" />
-        <h2 className="text-2xl font-bold">Patient Prescriptions</h2>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Pill className="h-6 w-6 text-cyan-600" />
+          <h2 className="text-2xl font-bold">Patient Prescriptions</h2>
+        </div>
+        <Button variant="outline" onClick={() => setSelectedPatient(null)}>
+          Back to Patients
+        </Button>
       </div>
       
       {prescriptions.map((prescription) => (
@@ -221,42 +271,7 @@ export default function PrescriptionManager() {
                     </div>
                   )}
 
-                  {!medication.status && (
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor={`notes-${actionKey}`}>Notes (optional)</Label>
-                        <Textarea
-                          id={`notes-${actionKey}`}
-                          placeholder="Add notes about medication administration..."
-                          value={notes[actionKey] || ""}
-                          onChange={(e) => updateNotes(prescription.id, index, e.target.value)}
-                          rows={2}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => handleMedicationAction(prescription.id, index, "given")}
-                          disabled={isLoading}
-                          className="flex-1 bg-green-600 hover:bg-green-700"
-                          size="sm"
-                        >
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          {isLoading ? "Marking..." : "Mark as Given"}
-                        </Button>
-                        <Button
-                          onClick={() => handleMedicationAction(prescription.id, index, "skip")}
-                          disabled={isLoading}
-                          variant="outline"
-                          className="flex-1 border-yellow-300 text-yellow-700 hover:bg-yellow-50"
-                          size="sm"
-                        >
-                          <X className="h-4 w-4 mr-2" />
-                          Skip This Time
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+
                 </div>
               );
             })}

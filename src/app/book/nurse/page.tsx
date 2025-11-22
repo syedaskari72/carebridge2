@@ -301,7 +301,7 @@ function BookNurseContent() {
                     }
                   }}
                   disabled={!selectedService}
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   {selectedNurse ? "Continue to Schedule" : "Continue to Nurse Selection"}
                 </Button>
@@ -377,7 +377,7 @@ function BookNurseContent() {
                 <Button 
                   onClick={() => setStep(3)} 
                   disabled={!selectedNurse}
-                  className="flex-1 sm:flex-none"
+                  className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   Continue to Schedule
                 </Button>
@@ -438,7 +438,7 @@ function BookNurseContent() {
                 <Button 
                   onClick={() => setStep(4)} 
                   disabled={!selectedDate || !selectedTime}
-                  className="flex-1 sm:flex-none"
+                  className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   Review Booking
                 </Button>
@@ -504,7 +504,7 @@ function BookNurseContent() {
               </div>
               <div className="flex gap-4 mt-6">
                 <Button variant="outline" onClick={() => setStep(3)}>Back</Button>
-                <Button onClick={handleBooking} className="flex-1 sm:flex-none">
+                <Button onClick={handleBooking} className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground">
                   Confirm Booking
                 </Button>
               </div>

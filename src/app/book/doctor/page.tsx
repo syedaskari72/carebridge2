@@ -245,7 +245,7 @@ export default function BookDoctorPage() {
             <Button 
               onClick={() => setStep(2)} 
               disabled={!selectedConsultationType}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               Continue to Doctor Selection
             </Button>
@@ -303,7 +303,7 @@ export default function BookDoctorPage() {
                 <Button 
                   onClick={() => setStep(3)} 
                   disabled={!selectedDoctor}
-                  className="flex-1 sm:flex-none"
+                  className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   Continue to Schedule
                 </Button>
@@ -365,7 +365,7 @@ export default function BookDoctorPage() {
                 <Button 
                   onClick={() => setStep(4)} 
                   disabled={!selectedDate || !selectedTime}
-                  className="flex-1 sm:flex-none"
+                  className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   Review Booking
                 </Button>
@@ -421,7 +421,7 @@ export default function BookDoctorPage() {
               </div>
               <div className="flex gap-4 mt-6">
                 <Button variant="outline" onClick={() => setStep(3)}>Back</Button>
-                <Button onClick={handleBooking} className="flex-1 sm:flex-none">
+                <Button onClick={handleBooking} className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground">
                   Confirm Consultation
                 </Button>
               </div>

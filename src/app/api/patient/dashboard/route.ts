@@ -199,6 +199,9 @@ export async function GET(request: NextRequest) {
       department: n.department,
       isAvailable: n.isAvailable,
       hourlyRate: n.hourlyRate,
+      rating: n.rating,
+      experience: n.experience,
+      specialties: n.specialties,
     }));
 
     const dashboardData = {

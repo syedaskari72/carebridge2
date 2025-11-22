@@ -55,7 +55,6 @@ export default function Header() {
   const getNavigationItems = () => {
     if (!session) {
       return [
-        { href: "/nurses", label: "Find Nurses" },
         { href: "/assistant", label: "AI Assistant" },
       ];
     }
@@ -63,7 +62,6 @@ export default function Header() {
     switch (session.user.userType) {
       case "PATIENT":
         return [
-          { href: "/nurses", label: "Find Nurses" },
           { href: "/bookings", label: "My Bookings" },
           { href: "/assistant", label: "AI Assistant" },
         ];
@@ -126,7 +124,7 @@ export default function Header() {
               <>
                 {session.user.userType === "PATIENT" && (
                   <Button asChild size="sm">
-                    <Link href="/book">Book Nurse</Link>
+                    <Link href="/nurses">Book Nurse</Link>
                   </Button>
                 )}
                 <DropdownMenu>
@@ -158,7 +156,7 @@ export default function Header() {
             ) : (
               <>
                 <Button asChild size="sm">
-                  <Link href="/book">Book Nurse</Link>
+                  <Link href="/nurses">Book Nurse</Link>
                 </Button>
                 <Button variant="ghost" asChild size="sm">
                   <Link href="/auth/signin">Sign In</Link>

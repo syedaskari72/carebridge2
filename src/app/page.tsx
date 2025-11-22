@@ -17,7 +17,7 @@ export default function Home() {
           </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button asChild size="lg" className="text-lg px-8 py-3">
-            <Link href="/book">Book a Nurse Now</Link>
+            <Link href="/nurses">Book a Nurse Now</Link>
           </Button>
           <Button asChild variant="outline" size="lg" className="text-lg px-8 py-3">
             <Link href="/assistant">Chat with AI Assistant</Link>

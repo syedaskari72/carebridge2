@@ -37,6 +37,7 @@ export default function NurseDashboard() {
   const [loading, setLoading] = useState(true);
   const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [subscriptionStatus, setSubscriptionStatus] = useState<any>(null);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -69,6 +70,7 @@ export default function NurseDashboard() {
 
     // Load real nurse dashboard data
     loadNurseDashboardData();
+    loadSubscriptionStatus();
 
     return () => clearInterval(timer);
   }, [session, status, router]);
@@ -79,11 +81,6 @@ export default function NurseDashboard() {
       if (res.ok) {
         const data = await res.json();
         setRealNurseData(data);
-        // Set initial availability state from database
-        if (data.nurse) {
-          setIsOnDuty(data.nurse.isOnDuty || false);
-          setIsAvailable(data.nurse.isAvailable || false);
-        }
       } else {
         console.error("Failed to load nurse dashboard data");
       }
@@ -91,6 +88,18 @@ export default function NurseDashboard() {
       console.error("Error loading nurse dashboard:", e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSubscriptionStatus = async () => {
+    try {
+      const res = await fetch("/api/subscriptions/status");
+      if (res.ok) {
+        const data = await res.json();
+        setSubscriptionStatus(data);
+      }
+    } catch (e) {
+      console.error("Error loading subscription:", e);
     }
   };
 
@@ -196,6 +205,51 @@ export default function NurseDashboard() {
           </Link>
         </div>
 
+        {/* Subscription Alert */}
+        {subscriptionStatus && !subscriptionStatus.hasSubscription && (
+          <Card className="mb-6 border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2 text-lg">
+                    👑 Start Your Subscription to Accept Bookings
+                  </h3>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-3 sm:mb-0">
+                    Subscribe to accept bookings and grow your practice. Start with a free 14-day trial!
+                  </p>
+                </div>
+                <Link href="/dashboard/nurse/subscription" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full sm:w-auto bg-yellow-600 hover:bg-yellow-700 text-white font-semibold">
+                    🚀 View Plans & Subscribe
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {subscriptionStatus?.hasSubscription && subscriptionStatus.subscription.status === "PAUSED" && (
+          <Card className="mb-6 border-red-500 bg-red-50 dark:bg-red-950">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-red-900 dark:text-red-100 mb-1">
+                    ⚠️ Subscription Paused
+                  </h3>
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    You've reached your booking limit. Upgrade your plan to continue accepting bookings.
+                  </p>
+                </div>
+                <Link href="/dashboard/nurse/subscription">
+                  <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                    Upgrade Now
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           <Button
@@ -217,6 +271,82 @@ export default function NurseDashboard() {
             🚨 SOS Alert
           </Button>
         </div>
+
+        {/* Subscription Booking Counter */}
+        {subscriptionStatus?.hasSubscription && (
+          <Card className={`mb-6 border-2 ${
+            subscriptionStatus.subscription.status === "TRIAL" || subscriptionStatus.subscription.plan.isTrial
+              ? "border-blue-500 bg-blue-50 dark:bg-blue-950"
+              : "border-primary"
+          }`}>
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ClipboardList className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold">Booking Usage</h3>
+                    <Badge variant="outline">{subscriptionStatus.subscription.plan.name}</Badge>
+                    {(subscriptionStatus.subscription.status === "TRIAL" || subscriptionStatus.subscription.plan.isTrial) && (
+                      <Badge className="bg-blue-500">Trial</Badge>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Bookings Used:</span>
+                      <span className="font-semibold">
+                        {subscriptionStatus.subscription.bookingsUsed} / {subscriptionStatus.subscription.bookingLimit === -1 ? "∞" : subscriptionStatus.subscription.bookingLimit}
+                      </span>
+                    </div>
+                    {subscriptionStatus.subscription.bookingLimit !== -1 && (
+                      <>
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                          <div
+                            className={`h-2.5 rounded-full ${
+                              (subscriptionStatus.subscription.bookingsUsed / subscriptionStatus.subscription.bookingLimit) >= 0.9
+                                ? "bg-red-500"
+                                : (subscriptionStatus.subscription.bookingsUsed / subscriptionStatus.subscription.bookingLimit) >= 0.7
+                                ? "bg-yellow-500"
+                                : "bg-green-500"
+                            }`}
+                            style={{
+                              width: `${Math.min((subscriptionStatus.subscription.bookingsUsed / subscriptionStatus.subscription.bookingLimit) * 100, 100)}%`,
+                            }}
+                          ></div>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Remaining:</span>
+                          <span className="font-semibold text-primary">
+                            {subscriptionStatus.subscription.bookingLimit - subscriptionStatus.subscription.bookingsUsed} bookings left
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    {(subscriptionStatus.subscription.status === "TRIAL" || subscriptionStatus.subscription.plan.isTrial) && subscriptionStatus.subscription.endDate && (
+                      <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                        Trial ends: {new Date(subscriptionStatus.subscription.endDate).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 w-full sm:w-auto">
+                  {(subscriptionStatus.subscription.status === "TRIAL" || subscriptionStatus.subscription.plan.isTrial) ? (
+                    <Link href="/dashboard/nurse/subscription" className="w-full sm:w-auto">
+                      <Button size="sm" className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700">
+                        Upgrade Plan
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Link href="/dashboard/nurse/subscription" className="w-full sm:w-auto">
+                      <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                        Manage Plan
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
@@ -283,14 +413,16 @@ export default function NurseDashboard() {
 
 
       {/* Assigned Patients */}
-      <div className="card mb-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold">Today's Assignments</h2>
-          <Link href="/dashboard/nurse/assignments" className="text-cyan-600 hover:text-cyan-700">
-            View all assignments
-          </Link>
-        </div>
-
+      <Card className="mb-8">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>Today's Assignments</CardTitle>
+            <Link href="/dashboard/nurse/assignments">
+              <Button variant="outline" size="sm">View All</Button>
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent>
         {loading ? (
           <div className="text-center py-8 text-slate-500">
             <div className="text-4xl mb-2">⏳</div>
@@ -355,7 +487,8 @@ export default function NurseDashboard() {
             ))}
           </div>
         )}
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Prescription Management */}
       <div className="mb-8">
@@ -386,6 +519,12 @@ export default function NurseDashboard() {
           <div className="text-4xl mb-3">💰</div>
           <h3 className="font-semibold mb-2">Earnings</h3>
           <p className="text-sm text-muted-foreground">Track payments</p>
+        </Link>
+
+        <Link href="/dashboard/nurse/subscription" className="card hover:shadow-lg transition-shadow text-center border-2 border-primary">
+          <div className="text-4xl mb-3">👑</div>
+          <h3 className="font-semibold mb-2">Subscription</h3>
+          <p className="text-sm text-muted-foreground">Manage your plan</p>
         </Link>
       </div>
     </div>

@@ -123,6 +123,7 @@ model Nurse {
   safetyAlerts     SafetyAlert[]
   treatmentLogs    TreatmentLog[]
   documents        NurseDocument[]
+  subscriptions    NurseSubscription[]
 
   @@map("nurses")
 }
@@ -534,4 +535,103 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+// Subscription Plans
+model SubscriptionPlan {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  slug            String   @unique
+  price           Float    // Monthly price in PKR
+  bookingLimit    Int      // -1 for unlimited
+  serviceRadius   Int      // KM, -1 for unlimited
+  servicesAllowed Int      // Number of services, -1 for unlimited
+  visibility      VisibilityLevel
+  analytics       AnalyticsLevel
+  support         SupportLevel
+  features        String[] // Array of feature descriptions
+  isTrial         Boolean  @default(false)
+  trialDays       Int?     // Only for trial plans
+  isActive        Boolean  @default(true)
+  displayOrder    Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  subscriptions NurseSubscription[]
+  
+  @@map("subscription_plans")
+}
+
+enum VisibilityLevel {
+  BASIC
+  STANDARD
+  FEATURED
+  TOP_PRIORITY
+}
+
+enum AnalyticsLevel {
+  NONE
+  BASIC
+  ADVANCED
+  FULL
+}
+
+enum SupportLevel {
+  EMAIL
+  EMAIL_CHAT
+  PRIORITY_ALL
+}
+
+// Nurse Subscriptions
+model NurseSubscription {
+  id              String             @id @default(cuid())
+  nurseId         String
+  planId          String
+  status          SubscriptionStatus @default(PENDING)
+  
+  // Usage tracking
+  bookingsUsed    Int                @default(0)
+  bookingLimit    Int                // Copied from plan at subscription time
+  
+  // Dates
+  startDate       DateTime?
+  endDate         DateTime?
+  trialEndsAt     DateTime?          // For trial plans
+  lastRenewalDate DateTime?
+  nextBillingDate DateTime?
+  
+  // XPay integration
+  xpayOrderId       String?          @unique
+  xpayTransactionId String?
+  xpaySubscriptionId String?         @unique // For recurring billing
+  
+  // Payment tracking
+  lastPaymentAmount Float?
+  lastPaymentDate   DateTime?
+  failedPayments    Int              @default(0)
+  
+  // Flags
+  autoRenew         Boolean          @default(true)
+  cancelledAt       DateTime?
+  cancelReason      String?
+  
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  nurse Nurse             @relation(fields: [nurseId], references: [id], onDelete: Cascade)
+  plan  SubscriptionPlan  @relation(fields: [planId], references: [id])
+  
+  @@index([nurseId, status])
+  @@index([status, endDate])
+  @@map("nurse_subscriptions")
+}
+
+enum SubscriptionStatus {
+  PENDING          // Payment initiated but not confirmed
+  ACTIVE           // Active subscription
+  TRIAL            // In trial period
+  PAUSED           // Limit reached or trial ended
+  EXPIRED          // Subscription ended
+  CANCELLED        // User cancelled
+  PAYMENT_FAILED   // Payment failed
 }

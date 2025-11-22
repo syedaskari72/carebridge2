@@ -43,11 +43,25 @@ export default function NurseSchedulePage() {
       const res = await fetch("/api/bookings?scope=nurse");
       if (res.ok) {
         const data = await res.json();
-        // Filter for upcoming appointments
-        const upcoming = data.filter((item: ScheduleItem) => 
-          new Date(item.appointmentDate) >= new Date() && 
-          ["CONFIRMED", "IN_PROGRESS"].includes(item.status)
-        );
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Filter for upcoming and current appointments
+        const upcoming = data.filter((item: ScheduleItem) => {
+          const appointmentDate = new Date(item.appointmentDate);
+          appointmentDate.setHours(0, 0, 0, 0);
+          return appointmentDate >= today && 
+                 ["PENDING", "CONFIRMED", "IN_PROGRESS"].includes(item.status);
+        });
+        
+        // Sort by date and time
+        upcoming.sort((a: ScheduleItem, b: ScheduleItem) => {
+          const dateA = new Date(a.appointmentDate).getTime();
+          const dateB = new Date(b.appointmentDate).getTime();
+          if (dateA !== dateB) return dateA - dateB;
+          return a.appointmentTime.localeCompare(b.appointmentTime);
+        });
+        
         setSchedule(upcoming);
       }
     } catch (e) {
@@ -69,6 +83,7 @@ export default function NurseSchedulePage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case "PENDING": return "bg-yellow-100 text-yellow-800";
       case "CONFIRMED": return "bg-green-100 text-green-800";
       case "IN_PROGRESS": return "bg-purple-100 text-purple-800";
       default: return "bg-gray-100 text-gray-800";
@@ -154,7 +169,8 @@ export default function NurseSchedulePage() {
 
                         <div className="text-right">
                           <div className="text-sm text-muted-foreground">
-                            {item.status === "CONFIRMED" ? "Ready to start" : "In progress"}
+                            {item.status === "PENDING" ? "Awaiting confirmation" :
+                             item.status === "CONFIRMED" ? "Ready to start" : "In progress"}
                           </div>
                         </div>
                       </div>

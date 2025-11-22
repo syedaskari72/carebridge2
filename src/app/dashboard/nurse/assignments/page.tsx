@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Clock, Phone, CheckCircle, XCircle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MapPin, Clock, Phone, CheckCircle, XCircle, Filter } from "lucide-react";
 
 interface Assignment {
   id: string;
@@ -29,6 +30,8 @@ export default function NurseAssignmentsPage() {
   const router = useRouter();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [dateFilter, setDateFilter] = useState<string>("ALL");
 
   useEffect(() => {
     if (status === "loading") return;
@@ -46,6 +49,12 @@ export default function NurseAssignmentsPage() {
       const res = await fetch("/api/bookings?scope=nurse");
       if (res.ok) {
         const data = await res.json();
+        // Sort by date descending (latest first)
+        data.sort((a: Assignment, b: Assignment) => {
+          const dateA = new Date(a.appointmentDate).getTime();
+          const dateB = new Date(b.appointmentDate).getTime();
+          return dateB - dateA;
+        });
         setAssignments(data);
       }
     } catch (e) {
@@ -85,6 +94,41 @@ export default function NurseAssignmentsPage() {
     }
   };
 
+  const getFilteredAssignments = () => {
+    let filtered = [...assignments];
+
+    // Status filter
+    if (statusFilter !== "ALL") {
+      filtered = filtered.filter(a => a.status === statusFilter);
+    }
+
+    // Date filter
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (dateFilter === "TODAY") {
+      filtered = filtered.filter(a => {
+        const date = new Date(a.appointmentDate);
+        date.setHours(0, 0, 0, 0);
+        return date.getTime() === today.getTime();
+      });
+    } else if (dateFilter === "UPCOMING") {
+      filtered = filtered.filter(a => {
+        const date = new Date(a.appointmentDate);
+        date.setHours(0, 0, 0, 0);
+        return date.getTime() >= today.getTime();
+      });
+    } else if (dateFilter === "PAST") {
+      filtered = filtered.filter(a => {
+        const date = new Date(a.appointmentDate);
+        date.setHours(0, 0, 0, 0);
+        return date.getTime() < today.getTime();
+      });
+    }
+
+    return filtered;
+  };
+
   if (status === "loading" || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -96,6 +140,8 @@ export default function NurseAssignmentsPage() {
     );
   }
 
+  const filteredAssignments = getFilteredAssignments();
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
@@ -103,17 +149,62 @@ export default function NurseAssignmentsPage() {
         <p className="text-muted-foreground">Manage your patient assignments and appointments</p>
       </div>
 
-      {assignments.length === 0 ? (
+      {/* Filters */}
+      <div className="mb-6 flex flex-col sm:flex-row gap-4">
+        <div className="flex-1">
+          <label className="text-sm font-medium mb-2 block">Status</label>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Statuses</SelectItem>
+              <SelectItem value="PENDING">Pending</SelectItem>
+              <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+              <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+              <SelectItem value="COMPLETED">Completed</SelectItem>
+              <SelectItem value="CANCELLED">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex-1">
+          <label className="text-sm font-medium mb-2 block">Date</label>
+          <Select value={dateFilter} onValueChange={setDateFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="All dates" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Dates</SelectItem>
+              <SelectItem value="TODAY">Today</SelectItem>
+              <SelectItem value="UPCOMING">Upcoming</SelectItem>
+              <SelectItem value="PAST">Past</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Results count */}
+      <div className="mb-4 text-sm text-muted-foreground">
+        Showing {filteredAssignments.length} of {assignments.length} assignments
+      </div>
+
+      {filteredAssignments.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
             <div className="text-6xl mb-4">📋</div>
-            <h2 className="text-xl font-semibold mb-2">No assignments yet</h2>
-            <p className="text-muted-foreground">You don't have any patient assignments at the moment.</p>
+            <h2 className="text-xl font-semibold mb-2">
+              {assignments.length === 0 ? "No assignments yet" : "No assignments match your filters"}
+            </h2>
+            <p className="text-muted-foreground">
+              {assignments.length === 0 
+                ? "You don't have any patient assignments at the moment." 
+                : "Try adjusting your filters to see more results."}
+            </p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
-          {assignments.map((assignment) => (
+          {filteredAssignments.map((assignment) => (
             <Card key={assignment.id}>
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">

@@ -156,7 +156,6 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
     if (!session) {
       return [
         { href: "/", label: "Home", icon: Home },
-        { href: "/nurses", label: "Find Nurses", icon: Users },
         { href: "/assistant", label: "AI Assistant", icon: MessageSquare },
         { href: "/auth/emergency", label: "Emergency", icon: Shield },
       ];
@@ -171,7 +170,6 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
         return [
           ...commonItems,
           { href: "/dashboard/patient", label: "My Dashboard", icon: Activity },
-          { href: "/nurses", label: "Find Nurses", icon: Users },
           { href: "/bookings", label: "My Bookings", icon: Calendar },
           { href: "/assistant", label: "AI Assistant", icon: MessageSquare },
           { href: "/dashboard/patient/records", label: "Medical Records", icon: User },
@@ -284,11 +282,11 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
                 </div>
                 <div className="space-y-1">
                   <Link
-                    href="/book"
+                    href="/nurses"
                     onClick={onClose}
                     className="block px-3 py-2 rounded-lg bg-primary text-primary-foreground font-medium text-center"
                   >
-                    Book a Nurse
+                    Find Nurses
                   </Link>
                   <Link
                     href="/auth/emergency"

@@ -18,7 +18,6 @@ import {
   Phone,
   MapPin,
   Activity,
-  Stethoscope,
   TrendingUp,
   Plus
 } from "lucide-react";
@@ -68,17 +67,7 @@ export default function PatientDashboard() {
     }
   };
 
-  // Auto-refresh dashboard data every 30 seconds for real-time updates
-  useEffect(() => {
-    if (!session || session.user.userType !== "PATIENT") return;
-    
-    const interval = setInterval(() => {
-      console.log("🔄 Auto-refreshing patient dashboard...");
-      loadDashboardData();
-    }, 30000); // 30 seconds
 
-    return () => clearInterval(interval);
-  }, [session]);
 
   const handlePrescriptionAdded = () => {
     // Refresh dashboard data to show new prescription
@@ -156,22 +145,12 @@ export default function PatientDashboard() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
-          <Link href="/book/nurse">
+          <Link href="/nurses">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardContent className="p-4 sm:p-6 text-center">
                 <UserCheck className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 sm:mb-3 text-primary" />
-                <h3 className="font-semibold text-sm sm:text-base mb-1">Book Nurse</h3>
+                <h3 className="font-semibold text-sm sm:text-base mb-1">Find Nurses</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground">Home care service</p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/book/doctor">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardContent className="p-4 sm:p-6 text-center">
-                <Stethoscope className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 sm:mb-3 text-primary" />
-                <h3 className="font-semibold text-sm sm:text-base mb-1">Book Doctor</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground">Medical consultation</p>
               </CardContent>
             </Card>
           </Link>
@@ -337,23 +316,27 @@ export default function PatientDashboard() {
             </CardHeader>
             <CardContent>
               {dashboardData.recommendedNurses?.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No recommendations at the moment.</p>
+                <p className="text-sm text-muted-foreground text-center py-4">Add prescriptions to get personalized nurse recommendations.</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {dashboardData.recommendedNurses.map((n: any) => (
-                    <div key={n.id} className="border rounded-lg p-4 flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium">{n.name}</h3>
-                        <p className="text-sm text-muted-foreground">{n.department}</p>
-                        <p className="text-sm">Rate: PKR {n.hourlyRate}/hour</p>
+                    <div key={n.id} className="border rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h3 className="font-medium">{n.name}</h3>
+                          <p className="text-sm text-muted-foreground">{n.department}</p>
+                        </div>
                         <span className={`text-xs px-2 py-0.5 rounded-full border ${n.isAvailable ? 'text-green-700 bg-green-50 border-green-200' : 'text-slate-600 bg-slate-50 border-slate-200'}`}>
                           {n.isAvailable ? 'Available' : 'Unavailable'}
                         </span>
                       </div>
-                      <div className="flex gap-2">
-                        <Link href={`/nurses/${n.id}`} className="text-sm text-cyan-600 hover:text-cyan-700">Profile</Link>
-                        <Link href={`/book/nurse?nurse=${n.id}`} className={`text-sm ${n.isAvailable ? 'text-green-600 hover:text-green-700' : 'text-slate-400 pointer-events-none'}`}>Book</Link>
-                      </div>
+                      <p className="text-sm mb-2">PKR {n.hourlyRate}/hour • {n.experience}</p>
+                      <Link 
+                        href={`/nurses/${n.id}`} 
+                        className={`block text-center px-3 py-2 rounded text-sm font-medium ${n.isAvailable ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-slate-200 text-slate-400 pointer-events-none'}`}
+                      >
+                        {n.isAvailable ? 'Book Now' : 'Unavailable'}
+                      </Link>
                     </div>
                   ))}
                 </div>

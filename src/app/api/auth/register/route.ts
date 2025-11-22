@@ -110,15 +110,43 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
+    const existingEmail = await prisma.user.findUnique({
       where: { email },
     });
 
-    if (existingUser) {
+    if (existingEmail) {
       return NextResponse.json(
-        { error: "User already exists" },
+        { error: "User with this email already exists" },
         { status: 400 }
       );
+    }
+
+    // Check if CNIC already exists
+    if (cnic) {
+      const existingCNIC = await prisma.user.findFirst({
+        where: { cnic },
+      });
+
+      if (existingCNIC) {
+        return NextResponse.json(
+          { error: "User with this CNIC already exists" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Check if phone already exists
+    if (phone) {
+      const existingPhone = await prisma.user.findFirst({
+        where: { phone },
+      });
+
+      if (existingPhone) {
+        return NextResponse.json(
+          { error: "User with this phone number already exists" },
+          { status: 400 }
+        );
+      }
     }
 
     // Hash password

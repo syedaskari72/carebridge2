@@ -40,10 +40,12 @@ export function NurseStatusProvider({ children }: NurseStatusProviderProps) {
     }
   };
 
-  // Load initial status when session changes
+  // Load initial status only once when nurse session is established
   useEffect(() => {
-    refreshStatus();
-  }, [session]);
+    if (session?.user.userType === "NURSE") {
+      refreshStatus();
+    }
+  }, [session?.user.id]);
 
   // Get location when component mounts
   useEffect(() => {
