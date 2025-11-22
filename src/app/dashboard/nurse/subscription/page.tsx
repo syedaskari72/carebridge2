@@ -65,10 +65,13 @@ export default function NurseSubscriptionPage() {
     }
     
     // Check if redirected from payment
-    const urlParams = new URLSearchParams(window.location.search);
-    const paymentStatus = urlParams.get('status');
+    const url = window.location.href;
+    const hasSuccessStatus = url.includes('status=success');
     
-    if (paymentStatus === 'success') {
+    console.log('🔍 Checking payment redirect:', { url, hasSuccessStatus });
+    
+    if (hasSuccessStatus) {
+      console.log('✅ Payment success detected, activating subscription...');
       // Activate pending subscription
       activatePendingSubscription();
     }
@@ -77,18 +80,23 @@ export default function NurseSubscriptionPage() {
   }, [session, status, router]);
 
   const activatePendingSubscription = async () => {
+    console.log('🔄 Attempting to activate pending subscription...');
     try {
       const res = await fetch('/api/subscriptions/activate-pending', {
         method: 'POST',
       });
       
-      if (res.ok) {
-        const data = await res.json();
-        if (data.activated) {
-          alert('✅ Subscription activated successfully!');
-          // Clear URL params
-          window.history.replaceState({}, '', '/dashboard/nurse/subscription');
-        }
+      console.log('Activation response status:', res.status);
+      const data = await res.json();
+      console.log('Activation response data:', data);
+      
+      if (res.ok && data.activated) {
+        alert('✅ Subscription activated successfully!');
+        // Clear URL params and reload
+        window.history.replaceState({}, '', '/dashboard/nurse/subscription');
+        loadData();
+      } else {
+        console.warn('Subscription not activated:', data);
       }
     } catch (error) {
       console.error('Failed to activate subscription:', error);
@@ -272,6 +280,32 @@ export default function NurseSubscriptionPage() {
             Choose the plan that fits your nursing practice
           </p>
         </div>
+
+        {/* Pending Subscription Alert */}
+        {!subscription && (
+          <Card className="mb-6 border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
+                    Payment Completed?
+                  </h3>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
+                    If you just completed a payment and your subscription isn't showing, click below to activate it.
+                  </p>
+                  <Button 
+                    size="sm" 
+                    onClick={activatePendingSubscription}
+                    disabled={processingPlan !== null}
+                  >
+                    {processingPlan ? 'Activating...' : 'Activate My Subscription'}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Current Subscription Status */}
         {subscription && (
