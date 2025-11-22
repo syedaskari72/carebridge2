@@ -86,7 +86,7 @@ export async function createSafePayOrder(data: SafePayOrderData): Promise<SafePa
   
   return {
     token: result.data.token,
-    checkout_url: `${SAFEPAY_CONFIG.baseUrl}/checkout/pay/${result.data.token}`,
+    checkout_url: `https://sandbox.getsafepay.com/checkout?tracker=${result.data.token}`,
   };
 }
 
