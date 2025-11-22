@@ -63,8 +63,37 @@ export default function NurseSubscriptionPage() {
       router.push("/auth/signin");
       return;
     }
+    
+    // Check if redirected from payment
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('status');
+    
+    if (paymentStatus === 'success') {
+      // Activate pending subscription
+      activatePendingSubscription();
+    }
+    
     loadData();
   }, [session, status, router]);
+
+  const activatePendingSubscription = async () => {
+    try {
+      const res = await fetch('/api/subscriptions/activate-pending', {
+        method: 'POST',
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        if (data.activated) {
+          alert('✅ Subscription activated successfully!');
+          // Clear URL params
+          window.history.replaceState({}, '', '/dashboard/nurse/subscription');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to activate subscription:', error);
+    }
+  };
 
   const loadData = async () => {
     try {
