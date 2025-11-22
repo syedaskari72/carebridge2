@@ -4,7 +4,10 @@ import { Safepay } from '@sfpy/node-sdk';
 const SAFEPAY_CONFIG = {
   apiKey: process.env.SAFEPAY_API_KEY || '',
   apiSecret: process.env.SAFEPAY_API_SECRET || '',
-  environment: process.env.SAFEPAY_ENVIRONMENT || 'sandbox',
+  environment: (process.env.SAFEPAY_ENVIRONMENT || 'sandbox') as 'sandbox' | 'production',
+  baseUrl: process.env.SAFEPAY_ENVIRONMENT === 'production' 
+    ? 'https://api.getsafepay.com' 
+    : 'https://sandbox.api.getsafepay.com',
 };
 
 function validateConfig() {
@@ -39,7 +42,7 @@ function getSafepayClient() {
   }
   
   return new Safepay({
-    environment: SAFEPAY_CONFIG.environment as 'sandbox' | 'production',
+    environment: SAFEPAY_CONFIG.environment as any,
     apiKey: SAFEPAY_CONFIG.apiKey,
     v1Secret: SAFEPAY_CONFIG.apiSecret,
     webhookSecret: webhookSecret,
@@ -74,7 +77,7 @@ export async function createSafePayOrder(data: SafePayOrderData): Promise<SafePa
   
   return {
     token: payment.token,
-    checkout_url: checkout.url,
+    checkout_url: typeof checkout === 'string' ? checkout : (checkout as any).url,
   };
 }
 
@@ -111,7 +114,7 @@ export async function createSafePaySubscription(data: SafePayOrderData): Promise
       
       return {
         token: subscription.token,
-        checkout_url: checkout.url,
+        checkout_url: typeof checkout === 'string' ? checkout : (checkout as any).url,
       };
     }
   } catch (error) {
