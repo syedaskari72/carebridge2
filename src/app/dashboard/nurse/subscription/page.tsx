@@ -120,8 +120,9 @@ export default function NurseSubscriptionPage() {
 
       if (res.ok) {
         const data = await res.json();
-        if (data.paymentUrl) {
-          window.location.href = data.paymentUrl;
+        console.log('Checkout response:', data);
+        if (data.paymentUrl || data.checkout_url) {
+          window.location.href = data.paymentUrl || data.checkout_url;
         } else {
           alert("Payment URL not received. Please contact support.");
         }
