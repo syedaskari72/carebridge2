@@ -40,9 +40,9 @@ interface SafePayResponse {
 export async function createSafePayOrder(data: SafePayOrderData): Promise<SafePayResponse> {
   validateConfig();
   
-  // Clean phone number - remove spaces, dashes, and country code
-  const cleanPhone = data.customerPhone.replace(/[\s\-\+]/g, '').replace(/^92/, '0');
+  const authToken = Buffer.from(`${SAFEPAY_CONFIG.apiKey}:${SAFEPAY_CONFIG.apiSecret}`).toString('base64');
   
+  // Create payment tracker with all required fields
   const payload = {
     client: SAFEPAY_CONFIG.apiKey,
     amount: Math.round(data.amount),
@@ -50,16 +50,13 @@ export async function createSafePayOrder(data: SafePayOrderData): Promise<SafePa
     order_id: data.orderId,
     source: 'custom',
     environment: SAFEPAY_CONFIG.environment,
-    callback_url: data.redirectUrl,
+    cancel_url: data.cancelUrl,
+    redirect_url: data.redirectUrl,
     webhook_url: data.webhookUrl,
   };
 
   console.log('SafePay payload:', JSON.stringify(payload, null, 2));
-  console.log('SafePay URL:', `${SAFEPAY_CONFIG.baseUrl}/order/v1/init`);
-  console.log('SafePay Auth:', `Basic ${Buffer.from(`${SAFEPAY_CONFIG.apiKey}:${SAFEPAY_CONFIG.apiSecret}`).toString('base64').substring(0, 20)}...`);
 
-  const authToken = Buffer.from(`${SAFEPAY_CONFIG.apiKey}:${SAFEPAY_CONFIG.apiSecret}`).toString('base64');
-  
   const response = await fetch(`${SAFEPAY_CONFIG.baseUrl}/order/v1/init`, {
     method: 'POST',
     headers: {
@@ -70,23 +67,22 @@ export async function createSafePayOrder(data: SafePayOrderData): Promise<SafePa
   });
 
   const responseText = await response.text();
-  console.log('SafePay response status:', response.status);
   console.log('SafePay response:', responseText);
 
   if (!response.ok) {
-    throw new Error(`SafePay API error: ${response.statusText} - ${responseText}`);
+    throw new Error(`SafePay error: ${response.statusText} - ${responseText}`);
   }
 
-  let result;
-  try {
-    result = JSON.parse(responseText);
-  } catch (e) {
-    throw new Error(`SafePay returned invalid JSON: ${responseText}`);
-  }
+  const result = JSON.parse(responseText);
+  const tracker = result.data.token;
+  
+  // Build checkout URL with all required parameters
+  const checkoutUrl = `${SAFEPAY_CONFIG.baseUrl}/checkout/pay?tracker=${tracker}&env=${SAFEPAY_CONFIG.environment}&source=custom`;
+  console.log('Checkout URL:', checkoutUrl);
   
   return {
-    token: result.data.token,
-    checkout_url: `https://sandbox.getsafepay.com/checkout?tracker=${result.data.token}`,
+    token: tracker,
+    checkout_url: checkoutUrl,
   };
 }
 
