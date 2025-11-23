@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Menu, ArrowLeft } from "lucide-react";
+import { Menu, ArrowLeft, Sun, Moon } from "lucide-react";
 import { useDrawer } from "@/components/DrawerProvider";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
 
 export default function MobileHeader() {
@@ -13,7 +14,13 @@ export default function MobileHeader() {
   const { data: session } = useSession();
   const { open: openDrawer } = useDrawer();
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
   const [scrolled, setScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -70,7 +77,21 @@ export default function MobileHeader() {
             )}
           </div>
           
-          {session && <NotificationsDropdown />}
+          <div className="flex items-center gap-2">
+            {mounted && (
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="p-1.5 rounded-full active:bg-white/10 transition-colors"
+              >
+                {theme === "dark" ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+              </button>
+            )}
+            {session && <NotificationsDropdown />}
+          </div>
         </div>
       </div>
       <div className={`bg-background rounded-t-[24px] transition-all duration-300 ${
