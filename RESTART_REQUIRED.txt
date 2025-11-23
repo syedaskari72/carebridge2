@@ -1,0 +1,10 @@
+DATABASE UPDATED - RESTART REQUIRED
+
+The gender column has been added to the database successfully.
+
+To complete the update:
+1. Stop your dev server (Ctrl+C)
+2. Run: npm run dev
+3. Delete this file
+
+The database schema is updated and ready to use.

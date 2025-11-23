@@ -325,6 +325,7 @@ export default function PatientDashboard() {
                         <div>
                           <h3 className="font-medium">{n.name}</h3>
                           <p className="text-sm text-muted-foreground">{n.department}</p>
+                          {n.gender && <p className="text-xs text-muted-foreground">{n.gender}</p>}
                         </div>
                         <span className={`text-xs px-2 py-0.5 rounded-full border ${n.isAvailable ? 'text-green-700 bg-green-50 border-green-200' : 'text-slate-600 bg-slate-50 border-slate-200'}`}>
                           {n.isAvailable ? 'Available' : 'Unavailable'}

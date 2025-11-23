@@ -18,6 +18,7 @@ import { useNurseStatus } from "@/contexts/NurseStatusContext";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { open: openDrawer } = useDrawer();
   const { data: session, status } = useSession();
   const { isOnDuty } = useNurseStatus();
@@ -27,6 +28,7 @@ export default function Header() {
 
   // Force re-render when session status changes
   useEffect(() => {
+    setMounted(true);
     console.log("[Header] Session status changed:", status);
   }, [status, session]);
 
@@ -104,7 +106,7 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            {navigationItems.map((item) => (
+            {mounted && navigationItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -118,7 +120,7 @@ export default function Header() {
           {/* CTA Button & User Menu */}
           <div className="hidden md:flex items-center space-x-3">
             <ThemeToggle />
-            {status === "loading" ? (
+            {!mounted || status === "loading" ? (
               <div className="text-sm text-muted-foreground">Loading...</div>
             ) : status === "authenticated" && session ? (
               <>

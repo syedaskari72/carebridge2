@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 interface Nurse {
   id: string;
-  user: { name: string };
+  user: { name: string; gender?: string };
   department?: string;
   isVerified?: boolean;
   isAvailable?: boolean;
@@ -147,6 +147,11 @@ export default function NursesPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">Rate:</span>
                   <span className="font-medium">PKR {(nurse as any).hourlyRate ?? 2500}/hour</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">Gender:</span>
+                  <span className="text-sm">{nurse.user?.gender || "Not specified"}</span>
                 </div>
 
                 <div className="flex items-center justify-between">

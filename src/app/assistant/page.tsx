@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useSession } from "next-auth/react";
 
 interface Message {
   id: string;
@@ -49,23 +50,43 @@ export default function AssistantPage() {
       timestamp: new Date()
     };
 
+    const messageText = inputText;
     setMessages(prev => [...prev, userMessage]);
     setInputText("");
     setIsTyping(true);
 
-    // Simulate AI response delay
-    setTimeout(() => {
-      const randomResponse = mockResponses[Math.floor(Math.random() * mockResponses.length)];
+    try {
+      console.log('[Chat] Sending message:', messageText);
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: messageText })
+      });
+
+      console.log('[Chat] Response status:', response.status);
+
+      const data = await response.json();
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: randomResponse,
+        text: data.success ? data.message : "Sorry, I couldn't process that. Please try again.",
         sender: "assistant",
         timestamp: new Date()
       };
       
       setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error("Chat error:", error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "Sorry, I'm having trouble connecting. Please try again.",
+        sender: "assistant",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1000 + Math.random() * 2000);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -169,7 +190,7 @@ export default function AssistantPage() {
             </button>
           </div>
           <p className="text-xs text-slate-500 mt-2">
-            ⚠️ This AI assistant provides general health information only. Always consult healthcare professionals for medical advice.
+            🤖 Powered by Groq AI (Llama 3.3) • ⚠️ This provides general health information only. Always consult healthcare professionals for medical advice.
           </p>
         </div>
       </div>

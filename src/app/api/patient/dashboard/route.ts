@@ -196,6 +196,7 @@ export async function GET(request: NextRequest) {
     const recommendedNurses = recommended.map(n => ({
       id: n.id,
       name: n.user.name,
+      gender: n.user.gender,
       department: n.department,
       isAvailable: n.isAvailable,
       hourlyRate: n.hourlyRate,

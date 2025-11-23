@@ -53,6 +53,7 @@ export default function NurseProfilePage() {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
+    gender: "",
     department: "",
     specialties: [] as string[],
     hourlyRate: "",
@@ -81,6 +82,7 @@ export default function NurseProfilePage() {
         setFormData({
           name: data.user.name || "",
           phone: data.user.phone || "",
+          gender: data.user.gender || "",
           department: data.department || "",
           specialties: data.specialties || [],
           hourlyRate: data.hourlyRate?.toString() || "",
@@ -215,6 +217,21 @@ export default function NurseProfilePage() {
                   value={formData.phone}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                 />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="gender">Gender</Label>
+                <Select value={formData.gender} onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MALE">Male</SelectItem>
+                    <SelectItem value="FEMALE">Female</SelectItem>
+                    <SelectItem value="OTHER">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div>
