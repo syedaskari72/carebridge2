@@ -130,6 +130,7 @@ export default function TreatmentTrackingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
+  const [treatmentData, setTreatmentData] = useState<any>(null);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -143,7 +144,21 @@ export default function TreatmentTrackingPage() {
       router.push(`/dashboard/${session.user.userType.toLowerCase()}`);
       return;
     }
+
+    fetchTreatmentData();
   }, [session, status, router]);
+
+  const fetchTreatmentData = async () => {
+    try {
+      const res = await fetch("/api/patient/treatment-data");
+      const data = await res.json();
+      if (data.treatment) {
+        setTreatmentData(data.treatment);
+      }
+    } catch (error) {
+      console.error("Error fetching treatment data:", error);
+    }
+  };
 
   const markMedicationTaken = (medicationId: string) => {
     // In a real app, this would update the backend
@@ -195,7 +210,38 @@ export default function TreatmentTrackingPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockTrackingData.ongoingTreatments.map((treatment) => (
+                  {treatmentData ? [
+                    {
+                      id: "1",
+                      name: treatmentData.treatmentName,
+                      progress: treatmentData.progress,
+                      status: treatmentData.progress >= 70 ? "on-track" : "needs-attention",
+                      nurse: "Your Nurse",
+                      description: "Current treatment plan"
+                    }
+                  ].map((treatment) => (
+                    <div key={treatment.id} className="p-4 border rounded-lg">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="font-semibold">{treatment.name}</h3>
+                          <p className="text-sm text-muted-foreground">{treatment.description}</p>
+                        </div>
+                        <Badge variant={treatment.status === 'on-track' ? 'default' : 'destructive'}>
+                          {treatment.status === 'on-track' ? 'On Track' : 'Needs Attention'}
+                        </Badge>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Progress</span>
+                          <span>{treatment.progress}%</span>
+                        </div>
+                        <Progress value={treatment.progress} className="h-2" />
+                        <div className="flex justify-between text-sm text-muted-foreground">
+                          <span>Nurse: {treatment.nurse}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )) : mockTrackingData.ongoingTreatments.map((treatment) => (
                     <div key={treatment.id} className="p-4 border rounded-lg">
                       <div className="flex justify-between items-start mb-3">
                         <div>
@@ -228,21 +274,21 @@ export default function TreatmentTrackingPage() {
               <Card>
                 <CardContent className="p-4 text-center">
                   <Heart className="h-8 w-8 mx-auto mb-2 text-red-500" />
-                  <p className="text-2xl font-bold">120/80</p>
+                  <p className="text-2xl font-bold">{treatmentData?.vitals?.bloodPressure || "120/80"}</p>
                   <p className="text-sm text-muted-foreground">Blood Pressure</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
                   <Droplets className="h-8 w-8 mx-auto mb-2 text-blue-500" />
-                  <p className="text-2xl font-bold">110</p>
+                  <p className="text-2xl font-bold">{treatmentData?.vitals?.bloodSugar || "110"}</p>
                   <p className="text-sm text-muted-foreground">Blood Sugar</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
                   <Weight className="h-8 w-8 mx-auto mb-2 text-green-500" />
-                  <p className="text-2xl font-bold">70kg</p>
+                  <p className="text-2xl font-bold">{treatmentData?.vitals?.weight || "70"}kg</p>
                   <p className="text-sm text-muted-foreground">Weight</p>
                 </CardContent>
               </Card>
@@ -267,7 +313,17 @@ export default function TreatmentTrackingPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockTrackingData.medicationSchedule.map((medication) => (
+                  {treatmentData?.medications ? treatmentData.medications.map((medication: any, idx: number) => (
+                    <div key={idx} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <div className="w-4 h-4 rounded-full bg-gray-300" />
+                        <div>
+                          <h3 className="font-semibold">{medication.name}</h3>
+                          <p className="text-sm text-muted-foreground">{medication.time} • {medication.frequency}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )) : mockTrackingData.medicationSchedule.map((medication) => (
                     <div key={medication.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center gap-4">
                         <div className={`w-4 h-4 rounded-full ${medication.taken ? 'bg-green-500' : 'bg-gray-300'}`} />

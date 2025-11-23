@@ -1,8 +1,38 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Home() {
+  const router = useRouter();
+  const { status } = useSession();
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+    
+    if (isMobile && status === "unauthenticated") {
+      const hasSeenOnboarding = localStorage.getItem("hasSeenOnboarding");
+      
+      if (!hasSeenOnboarding) {
+        router.replace("/onboarding");
+      } else {
+        router.replace("/welcome");
+      }
+      return;
+    }
+    
+    setChecking(false);
+  }, [status, router]);
+
+  if (checking || (typeof window !== "undefined" && window.innerWidth < 768 && status === "unauthenticated")) {
+    return <div className="min-h-screen bg-background" />;
+  }
+
   return (
     <div className="w-full overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">

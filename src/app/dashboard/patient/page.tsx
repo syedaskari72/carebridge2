@@ -174,6 +174,16 @@ export default function PatientDashboard() {
               </CardContent>
             </Card>
           </Link>
+
+          <Link href="/assistant">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardContent className="p-4 sm:p-6 text-center">
+                <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">🤖</div>
+                <h3 className="font-semibold text-sm sm:text-base mb-1">AI Assistant</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">Health chatbot</p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Next Medication Reminder */}
@@ -325,6 +335,7 @@ export default function PatientDashboard() {
                         <div>
                           <h3 className="font-medium">{n.name}</h3>
                           <p className="text-sm text-muted-foreground">{n.department}</p>
+                          {n.gender && <p className="text-xs text-muted-foreground">{n.gender}</p>}
                         </div>
                         <span className={`text-xs px-2 py-0.5 rounded-full border ${n.isAvailable ? 'text-green-700 bg-green-50 border-green-200' : 'text-slate-600 bg-slate-50 border-slate-200'}`}>
                           {n.isAvailable ? 'Available' : 'Unavailable'}

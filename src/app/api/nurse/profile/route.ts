@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
             name: true,
             email: true,
             phone: true,
+            gender: true,
           }
         }
       }
@@ -60,6 +61,7 @@ export async function PUT(request: NextRequest) {
     const { 
       name,
       phone,
+      gender,
       department,
       specialties,
       hourlyRate,
@@ -68,12 +70,13 @@ export async function PUT(request: NextRequest) {
     } = body;
 
     // Update user basic info
-    if (name || phone) {
+    if (name || phone || gender) {
       await prisma.user.update({
         where: { id: session.user.id },
         data: {
           ...(name && { name }),
           ...(phone && { phone }),
+          ...(gender && { gender }),
         },
       });
     }
@@ -94,6 +97,7 @@ export async function PUT(request: NextRequest) {
             name: true,
             email: true,
             phone: true,
+            gender: true,
           }
         }
       }

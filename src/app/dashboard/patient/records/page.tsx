@@ -67,34 +67,42 @@ export default function PatientRecordsPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Medical Records</h1>
-          <p className="text-slate-600">Complete health history and treatment tracking</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Medical Records</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Complete health history and treatment tracking</p>
         </div>
-        <Link
-          href="/dashboard/patient"
-          className="text-cyan-600 hover:text-cyan-700 flex items-center gap-2"
-        >
-          ← Back to Dashboard
-        </Link>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveTab('add-record')}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm"
+          >
+            + Add Record
+          </button>
+          <Link
+            href="/dashboard/patient"
+            className="px-4 py-2 border rounded-lg text-sm font-medium"
+          >
+            ← Back
+          </Link>
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 mb-8">
-        <nav className="flex space-x-8">
+      <div className="border-b border-border mb-6 overflow-x-auto">
+        <nav className="flex space-x-4 sm:space-x-8 min-w-max">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                 activeTab === tab.id
-                  ? "border-cyan-500 text-cyan-600"
-                  : "border-transparent text-slate-500 hover:text-slate-700"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground"
               }`}
             >
-              <span className="mr-2">{tab.icon}</span>
-              {tab.label}
+              <span className="mr-1 sm:mr-2">{tab.icon}</span>
+              <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
         </nav>

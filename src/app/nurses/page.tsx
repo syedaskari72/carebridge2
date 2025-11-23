@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 interface Nurse {
   id: string;
-  user: { name: string };
+  user: { name: string; gender?: string };
   department?: string;
   isVerified?: boolean;
   isAvailable?: boolean;
@@ -80,8 +80,8 @@ export default function NursesPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-foreground mb-8">Find Nurses</h1>
+    <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+      <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-8">Find Nurses</h1>
       
       {/* Search and Filters */}
       <div className="card mb-8">
@@ -114,13 +114,13 @@ export default function NursesPage() {
 
       {/* Nurses Grid */}
       {filteredNurses.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">🔍</div>
-          <h2 className="text-xl font-semibold mb-2">No nurses found</h2>
-          <p className="text-slate-600">Try adjusting your search criteria.</p>
+        <div className="text-center py-8 sm:py-12">
+          <div className="text-4xl sm:text-6xl mb-4">🔍</div>
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">No nurses found</h2>
+          <p className="text-sm sm:text-base text-slate-600">Try adjusting your search criteria.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredNurses.map((nurse) => (
             <div key={nurse.id} className="card hover:shadow-lg transition-shadow">
               <div className="text-center mb-4">
@@ -147,6 +147,11 @@ export default function NursesPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">Rate:</span>
                   <span className="font-medium">PKR {(nurse as any).hourlyRate ?? 2500}/hour</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">Gender:</span>
+                  <span className="text-sm">{nurse.user?.gender || "Not specified"}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
