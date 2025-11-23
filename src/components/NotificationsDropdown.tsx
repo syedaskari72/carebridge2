@@ -94,14 +94,14 @@ export default function NotificationsDropdown() {
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 top-12 w-80 max-w-[calc(100vw-2rem)] bg-background border rounded-lg shadow-lg z-50 max-h-[70vh] overflow-hidden flex flex-col">
-            <div className="p-4 border-b flex justify-between items-center">
-              <h3 className="font-semibold">Notifications</h3>
+          <div className="absolute right-0 top-12 w-80 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-[70vh] overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsOpen(false)}
-                className="h-6 w-6"
+                className="h-6 w-6 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -109,9 +109,9 @@ export default function NotificationsDropdown() {
 
             <div className="overflow-y-auto flex-1">
               {notifications.length === 0 ? (
-                <div className="p-8 text-center text-muted-foreground">
-                  <Bell className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>No notifications</p>
+                <div className="p-8 text-center">
+                  <Bell className="h-12 w-12 mx-auto mb-2 opacity-50 text-gray-400" />
+                  <p className="text-gray-600 dark:text-gray-400">No notifications</p>
                 </div>
               ) : (
                 <div className="divide-y">
@@ -127,15 +127,15 @@ export default function NotificationsDropdown() {
                         <div className="mt-1">{getIcon(notification.type)}</div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <h4 className="font-medium text-sm">{notification.title}</h4>
+                            <h4 className="font-medium text-sm text-gray-900 dark:text-white">{notification.title}</h4>
                             {!notification.read && (
                               <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0 mt-1" />
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
                             {notification.message}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-2">
+                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
                             {new Date(notification.timestamp).toLocaleString()}
                           </p>
                         </div>
@@ -151,8 +151,9 @@ export default function NotificationsDropdown() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full"
+                  className="w-full text-foreground hover:bg-muted"
                   onClick={() => {
+                    setUnreadCount(0);
                     router.push("/notifications");
                     setIsOpen(false);
                   }}

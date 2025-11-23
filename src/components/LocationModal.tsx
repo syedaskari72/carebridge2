@@ -19,6 +19,7 @@ export default function LocationModal({ isOpen, onClose, onAddressSubmit }: Loca
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("📍 LocationModal: Submit clicked, address:", address);
     if (!address.trim()) {
       alert("Please enter your address");
       return;
@@ -26,11 +27,12 @@ export default function LocationModal({ isOpen, onClose, onAddressSubmit }: Loca
     
     setLoading(true);
     try {
+      console.log("📍 LocationModal: Calling onAddressSubmit with:", address.trim());
       // Pass the address back to parent component
       onAddressSubmit(address.trim());
       setAddress("");
     } catch (error) {
-      console.error("Error submitting address:", error);
+      console.error("❌ LocationModal: Error submitting address:", error);
       alert("Something went wrong. Please try again.");
     } finally {
       setLoading(false);

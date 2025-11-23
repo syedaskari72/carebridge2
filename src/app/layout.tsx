@@ -83,7 +83,7 @@ export default function RootLayout({
                 <div className="flex flex-col min-h-screen w-full overflow-x-hidden">
                   <Header />
                   <MobileHeader />
-                  <main className="flex-1 pb-20 md:pb-0 w-full overflow-x-hidden -mt-5 md:mt-0 relative z-10">{children}</main>
+                  <main className="flex-1 pb-20 md:pb-0 w-full overflow-x-hidden relative z-10">{children}</main>
                   <Footer />
                   <BottomNav />
                   <PWAInstallPrompt />

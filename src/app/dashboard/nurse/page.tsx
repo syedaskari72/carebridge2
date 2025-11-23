@@ -190,10 +190,10 @@ export default function NurseDashboard() {
   }
 
   return (
-    <div className="w-full overflow-x-hidden">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+    <div className="w-full overflow-x-hidden bg-background">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-0 pb-4 sm:pb-8">
         {/* Header */}
-        <div className="mb-6 sm:mb-8 flex justify-between items-start">
+        <div className="mb-6 sm:mb-8 pt-6 sm:pt-8 flex justify-between items-start">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
               Welcome, Nurse {session.user.name}
@@ -277,11 +277,7 @@ export default function NurseDashboard() {
 
         {/* Subscription Booking Counter */}
         {subscriptionStatus?.hasSubscription && (
-          <Card className={`mb-6 border-2 ${
-            subscriptionStatus.subscription.status === "TRIAL" || subscriptionStatus.subscription.plan.isTrial
-              ? "border-blue-500 bg-blue-50 dark:bg-blue-950"
-              : "border-primary"
-          }`}>
+          <Card className="mb-6">
             <CardContent className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex-1">
@@ -387,8 +383,9 @@ export default function NurseDashboard() {
 
 
 
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mb-6 sm:mb-8">
       {/* Assigned Patients */}
-      <Card className="mb-6 sm:mb-8">
+      <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg sm:text-xl">Today's Assignments</CardTitle>
@@ -451,7 +448,7 @@ export default function NurseDashboard() {
                   <Button 
                     variant="outline" 
                     className="col-span-2 sm:flex-1 text-xs sm:text-sm"
-                    onClick={() => setSelectedPatient(patient)}
+                    onClick={() => router.push(`/dashboard/patient/records?patientId=${patient.patientId}`)}
                   >
                     View Details
                   </Button>
@@ -483,6 +480,7 @@ export default function NurseDashboard() {
         )}
         </CardContent>
       </Card>
+      </div>
 
       {/* Prescription Management */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mb-6 sm:mb-8">
@@ -528,6 +526,16 @@ export default function NurseDashboard() {
               <div className="text-3xl sm:text-4xl mb-2">💰</div>
               <h3 className="font-semibold text-sm sm:text-base mb-1">Earnings</h3>
               <p className="text-xs text-muted-foreground">Track payments</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/dashboard/nurse/doctors">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+            <CardContent className="p-4 sm:p-5 text-center flex flex-col items-center justify-center h-full min-h-[120px]">
+              <div className="text-3xl sm:text-4xl mb-2">👨⚕️</div>
+              <h3 className="font-semibold text-sm sm:text-base mb-1">Doctors</h3>
+              <p className="text-xs text-muted-foreground">Contact doctors</p>
             </CardContent>
           </Card>
         </Link>

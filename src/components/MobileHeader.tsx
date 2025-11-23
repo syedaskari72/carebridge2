@@ -52,7 +52,7 @@ export default function MobileHeader() {
   };
 
   return (
-    <header className={`md:hidden sticky top-0 z-40 bg-gradient-to-b from-cyan-500 to-cyan-600 dark:from-cyan-600 dark:to-cyan-700 text-white pt-safe transition-all duration-300 ${
+    <header className={`md:hidden sticky top-0 z-40 bg-gradient-to-b from-cyan-500 to-cyan-600 text-white pt-safe transition-all duration-300 rounded-b-3xl ${
       scrolled ? "shadow-none" : "shadow-lg"
     }`}>
       <div className={`px-4 transition-all duration-300 ${
@@ -94,9 +94,7 @@ export default function MobileHeader() {
           </div>
         </div>
       </div>
-      <div className={`bg-background rounded-t-[24px] transition-all duration-300 ${
-        scrolled ? "h-4" : "h-6"
-      }`}></div>
+
     </header>
   );
 }

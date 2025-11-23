@@ -252,9 +252,9 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="w-full overflow-x-hidden">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <div className="mb-6 sm:mb-8">
+    <div className="w-full overflow-x-hidden bg-background">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-0 pb-4 sm:pb-8">
+        <div className="mb-6 sm:mb-8 pt-6 sm:pt-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Admin Dashboard</h1>
           <p className="text-muted-foreground">Manage users, verify professionals, and monitor system activity</p>
         </div>

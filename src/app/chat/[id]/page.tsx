@@ -132,16 +132,15 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] md:h-[calc(100vh-8rem)]">
-      <div className="bg-primary text-primary-foreground p-4 flex items-center justify-between">
+      <div className="bg-white dark:bg-black text-foreground dark:text-white p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.back()}
-            className="text-primary-foreground hover:bg-primary-foreground/20"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+          <div className="w-10 h-10 rounded-full bg-cyan-500 flex items-center justify-center text-white font-semibold">
+            {otherUser?.image ? (
+              <img src={otherUser.image} alt={otherUser.name} className="w-10 h-10 rounded-full object-cover" />
+            ) : (
+              otherUser?.name?.charAt(0) || "?"
+            )}
+          </div>
           <div>
             <h2 className="font-semibold">{otherUser?.name || "Loading..."}</h2>
             <p className="text-xs opacity-90">{otherUser?.userType?.toLowerCase()}</p>
@@ -152,14 +151,14 @@ export default function ChatPage() {
             variant="ghost"
             size="icon"
             onClick={handleCall}
-            className="text-primary-foreground hover:bg-primary-foreground/20"
+            className="text-white hover:bg-white/20"
           >
             <Phone className="h-5 w-5" />
           </Button>
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-muted/20">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white dark:bg-black">
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -185,16 +184,16 @@ export default function ChatPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-4 bg-background border-t">
+      <div className="p-4 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800">
         <div className="flex gap-2">
           <Input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && sendMessage()}
             placeholder="Type a message..."
-            className="flex-1"
+            className="flex-1 bg-gray-100 dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-foreground"
           />
-          <Button onClick={sendMessage} size="icon">
+          <Button onClick={sendMessage} size="icon" className="bg-cyan-500 hover:bg-cyan-600">
             <Send className="h-5 w-5" />
           </Button>
         </div>

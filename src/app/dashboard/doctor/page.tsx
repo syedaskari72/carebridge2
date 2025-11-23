@@ -234,10 +234,10 @@ export default function DoctorDashboard() {
   }
 
   return (
-    <div className="w-full overflow-x-hidden">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+    <div className="w-full overflow-x-hidden bg-background">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-0 pb-4 sm:pb-8">
       {/* Welcome Header */}
-      <div className="mb-6 sm:mb-8">
+      <div className="mb-6 sm:mb-8 pt-6 sm:pt-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
           Welcome, Dr. {session.user.name}
         </h1>
@@ -439,6 +439,16 @@ export default function DoctorDashboard() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mt-6 sm:mt-8">
+        <Link href="/dashboard/doctor/nurses">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardContent className="p-4 sm:p-6 text-center">
+              <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">👩⚕️</div>
+              <h3 className="font-semibold text-sm sm:text-base mb-1">All Nurses</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">View registered nurses</p>
+            </CardContent>
+          </Card>
+        </Link>
+
         <Link href="/dashboard/doctor/prescriptions">
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardContent className="p-4 sm:p-6 text-center">
@@ -455,16 +465,6 @@ export default function DoctorDashboard() {
               <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">🩺</div>
               <h3 className="font-semibold text-sm sm:text-base mb-1">Consultations</h3>
               <p className="text-xs sm:text-sm text-muted-foreground">Patient consultations</p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/dashboard/doctor/reports">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardContent className="p-4 sm:p-6 text-center">
-              <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">📊</div>
-              <h3 className="font-semibold text-sm sm:text-base mb-1">Reports</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground">Analytics & insights</p>
             </CardContent>
           </Card>
         </Link>

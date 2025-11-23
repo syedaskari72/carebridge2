@@ -6,12 +6,15 @@ import { prisma } from "@/lib/prisma";
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.userType !== "PATIENT") {
+    if (!session || (session.user.userType !== "PATIENT" && session.user.userType !== "NURSE")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const patientId = searchParams.get('patientId');
+    
     const patient = await prisma.patient.findUnique({
-      where: { userId: session.user.id },
+      where: patientId ? { id: patientId } : { userId: session.user.id },
       include: { user: true },
     });
 
@@ -33,6 +36,21 @@ export async function GET(request: NextRequest) {
       include: { nurse: { include: { user: true } } },
       orderBy: { createdAt: "desc" },
       take: 50,
+    });
+
+    // Treatment data from bookings
+    const treatmentData = await prisma.treatmentData.findMany({
+      where: {
+        booking: { patientId: patient.id },
+      },
+      include: {
+        booking: {
+          include: {
+            nurse: { include: { user: true } },
+          },
+        },
+      },
+      orderBy: { updatedAt: "desc" },
     });
 
     const consultations = await prisma.consultation.findMany({
@@ -70,21 +88,38 @@ export async function GET(request: NextRequest) {
         sideEffects: [],
         refillsRemaining: undefined,
       })),
-      treatmentHistory: treatmentLogs.map(t => ({
-        id: t.id,
-        date: t.createdAt,
-        type: t.treatmentType,
-        nurse: t.nurse.user.name,
-        duration: undefined,
-        vitals: t.vitals || {},
-        medications: Array.isArray(t.medications as any) ? (t.medications as any) : [],
-        procedures: [],
-        notes: t.notes,
-        nextVisit: t.nextVisit || undefined,
-        status: "completed",
-        photos: [],
-        nurseSignature: undefined,
-      })),
+      treatmentHistory: [
+        ...treatmentData.map(td => ({
+          id: td.id,
+          date: td.updatedAt,
+          type: td.treatmentName,
+          nurse: td.booking.nurse?.user.name || "Nurse",
+          duration: undefined,
+          vitals: (td.vitals as any) || {},
+          medications: Array.isArray((td.medications as any)) ? (td.medications as any) : [],
+          procedures: [],
+          notes: `Treatment progress: ${td.progress}%`,
+          nextVisit: undefined,
+          status: td.progress === 100 ? "completed" : "ongoing",
+          photos: [],
+          nurseSignature: undefined,
+        })),
+        ...treatmentLogs.map(t => ({
+          id: t.id,
+          date: t.createdAt,
+          type: t.treatmentType,
+          nurse: t.nurse.user.name,
+          duration: undefined,
+          vitals: t.vitals || {},
+          medications: Array.isArray(t.medications as any) ? (t.medications as any) : [],
+          procedures: [],
+          notes: t.notes,
+          nextVisit: t.nextVisit || undefined,
+          status: "completed",
+          photos: [],
+          nurseSignature: undefined,
+        })),
+      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
       consultations: consultations.map(c => ({
         id: c.id,
         date: c.createdAt,

@@ -273,9 +273,16 @@ export default function NurseProfilePage() {
                 <Input
                   id="hourlyRate"
                   type="number"
+                  min="0"
+                  max="4000"
                   value={formData.hourlyRate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, hourlyRate: e.target.value }))}
-                  placeholder="e.g., 2500"
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    if (value <= 4000 || e.target.value === "") {
+                      setFormData(prev => ({ ...prev, hourlyRate: e.target.value }));
+                    }
+                  }}
+                  placeholder="e.g., 2500 (Max: 4000)"
                 />
               </div>
             </div>

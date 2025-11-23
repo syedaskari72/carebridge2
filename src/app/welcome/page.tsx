@@ -29,7 +29,7 @@ export default function WelcomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col items-center justify-between p-6 pt-12 pb-8">
+    <div className="h-screen w-screen fixed inset-0 bg-gradient-to-br from-cyan-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col items-center justify-between p-6 pt-12 pb-8 overflow-hidden">
       <div className="flex-1 flex flex-col items-center justify-center w-full max-w-md">
         <div className="mb-8 relative">
           <div className="w-48 h-48 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-full flex items-center justify-center shadow-2xl">

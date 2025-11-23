@@ -89,7 +89,7 @@ export default function Header() {
   const navigationItems = getNavigationItems();
 
   return (
-    <header className="hidden md:block bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm border-b border-border">
+    <header className="hidden md:block bg-gradient-to-b from-cyan-500 to-cyan-600 text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -99,7 +99,7 @@ export default function Header() {
               alt="CareBridge Logo"
               className="w-8 h-8 object-contain"
             />
-            <span className="text-xl font-bold text-foreground">CareBridge</span>
+            <span className="text-xl font-bold text-white">CareBridge</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -108,7 +108,7 @@ export default function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-muted-foreground hover:text-primary font-medium transition-colors"
+                className="text-white/80 hover:text-white font-medium transition-colors"
               >
                 {item.label}
               </Link>
