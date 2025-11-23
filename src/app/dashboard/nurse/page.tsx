@@ -21,8 +21,10 @@ import {
   Phone,
   Navigation,
   Heart,
-  Pill
+  Pill,
+  MessageSquare
 } from "lucide-react";
+import { createChatId } from "@/lib/chatUtils";
 import { useNurseStatus } from "@/contexts/NurseStatusContext";
 import PrescriptionManager from "@/components/PrescriptionManager";
 
@@ -38,6 +40,7 @@ export default function NurseDashboard() {
   const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [subscriptionStatus, setSubscriptionStatus] = useState<any>(null);
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -349,33 +352,33 @@ export default function NurseDashboard() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <Users className="h-8 w-8 mx-auto mb-2 text-primary" />
-              <p className="text-2xl font-bold">{realNurseData?.stats?.totalActivePatients || 0}</p>
-              <p className="text-sm text-muted-foreground">Active Patients</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <Card className="h-full">
+            <CardContent className="p-4 sm:p-5 text-center flex flex-col items-center justify-center min-h-[110px]">
+              <Users className="h-7 w-7 sm:h-8 sm:w-8 mb-2 text-primary" />
+              <p className="text-xl sm:text-2xl font-bold">{realNurseData?.stats?.totalActivePatients || 0}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Active Patients</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
-              <p className="text-2xl font-bold">{realNurseData?.stats?.completedToday || 0}</p>
-              <p className="text-sm text-muted-foreground">Completed Today</p>
+          <Card className="h-full">
+            <CardContent className="p-4 sm:p-5 text-center flex flex-col items-center justify-center min-h-[110px]">
+              <CheckCircle className="h-7 w-7 sm:h-8 sm:w-8 mb-2 text-green-500" />
+              <p className="text-xl sm:text-2xl font-bold">{realNurseData?.stats?.completedToday || 0}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Completed Today</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <Heart className="h-8 w-8 mx-auto mb-2 text-red-500" />
-              <p className="text-2xl font-bold">{realNurseData?.stats?.rating || 0}</p>
-              <p className="text-sm text-muted-foreground">Rating</p>
+          <Card className="h-full">
+            <CardContent className="p-4 sm:p-5 text-center flex flex-col items-center justify-center min-h-[110px]">
+              <Heart className="h-7 w-7 sm:h-8 sm:w-8 mb-2 text-red-500" />
+              <p className="text-xl sm:text-2xl font-bold">{realNurseData?.stats?.rating || 0}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Rating</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <TrendingUp className="h-8 w-8 mx-auto mb-2 text-blue-500" />
-              <p className="text-2xl font-bold">PKR {realNurseData?.todayStats?.earnings || 0}</p>
-              <p className="text-sm text-muted-foreground">Today's Earnings</p>
+          <Card className="h-full">
+            <CardContent className="p-4 sm:p-5 text-center flex flex-col items-center justify-center min-h-[110px]">
+              <TrendingUp className="h-7 w-7 sm:h-8 sm:w-8 mb-2 text-blue-500" />
+              <p className="text-xl sm:text-2xl font-bold">PKR {realNurseData?.todayStats?.earnings || 0}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Today's Earnings</p>
             </CardContent>
           </Card>
         </div>
@@ -445,14 +448,33 @@ export default function NurseDashboard() {
                   <Button className="col-span-2 sm:flex-1 text-xs sm:text-sm">
                     Start Treatment
                   </Button>
-                  <Button variant="outline" className="col-span-2 sm:flex-1 text-xs sm:text-sm">
+                  <Button 
+                    variant="outline" 
+                    className="col-span-2 sm:flex-1 text-xs sm:text-sm"
+                    onClick={() => setSelectedPatient(patient)}
+                  >
                     View Details
                   </Button>
-                  <Button variant="outline" size="sm" className="text-xs sm:text-sm">
-                    📞
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      if (!patient.patientId) {
+                        console.error('Patient ID missing:', patient);
+                        alert('Unable to start chat: Patient ID not found');
+                        return;
+                      }
+                      router.push(`/chat/${createChatId(session.user.id, patient.patientId)}`);
+                    }}
+                  >
+                    <MessageSquare className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="sm" className="text-xs sm:text-sm">
-                    🗺️
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.location.href = `tel:${patient.phone}`}
+                  >
+                    <Phone className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -463,62 +485,142 @@ export default function NurseDashboard() {
       </Card>
 
       {/* Prescription Management */}
-      <div className="mb-6 sm:mb-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mb-6 sm:mb-8">
         <PrescriptionManager />
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mb-6">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
         <Link href="/dashboard/nurse/treatments">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardContent className="p-4 sm:p-6 text-center">
-              <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">📝</div>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+            <CardContent className="p-4 sm:p-5 text-center flex flex-col items-center justify-center h-full min-h-[120px]">
+              <div className="text-3xl sm:text-4xl mb-2">📝</div>
               <h3 className="font-semibold text-sm sm:text-base mb-1">Treatment Logs</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground">Update patient records</p>
+              <p className="text-xs text-muted-foreground">Update records</p>
             </CardContent>
           </Card>
         </Link>
 
         <Link href="/dashboard/nurse/schedule">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardContent className="p-4 sm:p-6 text-center">
-              <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">📅</div>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+            <CardContent className="p-4 sm:p-5 text-center flex flex-col items-center justify-center h-full min-h-[120px]">
+              <div className="text-3xl sm:text-4xl mb-2">📅</div>
               <h3 className="font-semibold text-sm sm:text-base mb-1">My Schedule</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground">View availability</p>
+              <p className="text-xs text-muted-foreground">View availability</p>
             </CardContent>
           </Card>
         </Link>
 
         <Link href="/dashboard/nurse/safety">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardContent className="p-4 sm:p-6 text-center">
-              <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">🛡️</div>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+            <CardContent className="p-4 sm:p-5 text-center flex flex-col items-center justify-center h-full min-h-[120px]">
+            <div className="text-3xl sm:text-4xl mb-2">🛡️</div>
               <h3 className="font-semibold text-sm sm:text-base mb-1">Safety Center</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground">Emergency protocols & contacts</p>
+              <p className="text-xs text-muted-foreground">Emergency protocols</p>
             </CardContent>
           </Card>
         </Link>
 
         <Link href="/dashboard/nurse/earnings">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardContent className="p-4 sm:p-6 text-center">
-              <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">💰</div>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+            <CardContent className="p-4 sm:p-5 text-center flex flex-col items-center justify-center h-full min-h-[120px]">
+              <div className="text-3xl sm:text-4xl mb-2">💰</div>
               <h3 className="font-semibold text-sm sm:text-base mb-1">Earnings</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground">Track payments</p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/dashboard/nurse/subscription" className="col-span-2 lg:col-span-1">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 border-primary">
-            <CardContent className="p-4 sm:p-6 text-center">
-              <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">👑</div>
-              <h3 className="font-semibold text-sm sm:text-base mb-1">Subscription</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground">Manage your plan</p>
+              <p className="text-xs text-muted-foreground">Track payments</p>
             </CardContent>
           </Card>
         </Link>
       </div>
+
+      <Link href="/dashboard/nurse/subscription" className="block mt-4">
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 border-primary">
+          <CardContent className="p-5 sm:p-6 text-center">
+            <div className="text-4xl mb-2">👑</div>
+            <h3 className="font-semibold text-base sm:text-lg mb-1">Subscription</h3>
+            <p className="text-sm text-muted-foreground">Manage your plan</p>
+          </CardContent>
+        </Card>
+      </Link>
+      </div>
+
+      {selectedPatient && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedPatient(null)}>
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <CardTitle>Patient Details</CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedPatient(null)}>X</Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="font-semibold text-lg mb-2">{selectedPatient.name}</h3>
+                <div className="grid gap-3">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Condition</p>
+                    <p className="font-medium">{selectedPatient.condition}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Address</p>
+                    <p className="font-medium">{selectedPatient.address}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Phone</p>
+                    <p className="font-medium">{selectedPatient.phone || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Appointment Time</p>
+                    <p className="font-medium">{new Date(selectedPatient.nextVisit).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Priority</p>
+                    <Badge className={selectedPatient.priority === "EMERGENCY" ? "bg-red-500" : selectedPatient.priority === "URGENT" ? "bg-yellow-500" : "bg-green-500"}>
+                      {selectedPatient.priority}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Status</p>
+                    <Badge>{selectedPatient.status}</Badge>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2 pt-4">
+                <div className="flex gap-2">
+                  <Button className="flex-1">Start Treatment</Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => {
+                      if (!selectedPatient.patientId) {
+                        console.error('Patient ID missing:', selectedPatient);
+                        alert('Unable to start chat: Patient ID not found');
+                        return;
+                      }
+                      router.push(`/chat/${createChatId(session.user.id, selectedPatient.patientId)}`);
+                    }}
+                  >
+                    Chat
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => window.location.href = `tel:${selectedPatient.phone}`}
+                  >
+                    <Phone className="h-4 w-4" />
+                  </Button>
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => router.push(`/dashboard/patient/records?patientId=${selectedPatient.patientId}`)}
+                >
+                  View Medical Records
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

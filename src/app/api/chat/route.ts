@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const response = await getChatResponse(message, session.user.userType);
+    const response = await getChatResponse(message, session.user.userType, session.user.id);
 
     return NextResponse.json(response);
   } catch (error) {

@@ -277,6 +277,7 @@ model Booking {
   payment       Payment?
   treatmentLogs TreatmentLog[]
   consultations Consultation[]
+  treatmentData TreatmentData?
 
   @@map("bookings")
 }
@@ -299,6 +300,23 @@ enum UrgencyLevel {
   ROUTINE
   URGENT
   EMERGENCY
+}
+
+// Treatment Data for tracking patient treatments
+model TreatmentData {
+  id        String   @id @default(cuid())
+  bookingId String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  treatmentName String
+  progress      Int    @default(0)
+  medications   Json   // Array of {name, time, frequency}
+  vitals        Json   // {bloodPressure, bloodSugar, weight, temperature}
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("treatment_data")
 }
 
 // Payment model (from UML)
@@ -496,6 +514,34 @@ model ChatSession {
   patient Patient @relation(fields: [patientId], references: [id])
 
   @@map("chat_sessions")
+}
+
+// Chat Messages for real-time messaging
+model ChatMessage {
+  id         String   @id @default(cuid())
+  chatId     String
+  senderId   String
+  senderName String
+  message    String   @db.Text
+  timestamp  DateTime @default(now())
+
+  @@index([chatId, timestamp])
+  @@map("chat_messages")
+}
+
+// Notifications
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String   @db.Text
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read, createdAt])
+  @@map("notifications")
 }
 
 // NextAuth.js required models

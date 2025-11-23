@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import PWAProvider from "@/components/PWAProvider";
 import Header from "@/components/Header";
+import MobileHeader from "@/components/MobileHeader";
 import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
 import { SessionProvider } from "@/components/SessionProvider";
@@ -45,8 +46,8 @@ export const viewport: Viewport = {
   themeColor: "#0891b2",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
   viewportFit: "cover",
 };
 
@@ -81,7 +82,8 @@ export default function RootLayout({
               <DrawerProvider>
                 <div className="flex flex-col min-h-screen w-full overflow-x-hidden">
                   <Header />
-                  <main className="flex-1 pb-20 md:pb-0 w-full overflow-x-hidden">{children}</main>
+                  <MobileHeader />
+                  <main className="flex-1 pb-20 md:pb-0 w-full overflow-x-hidden -mt-5 md:mt-0 relative z-10">{children}</main>
                   <Footer />
                   <BottomNav />
                   <PWAInstallPrompt />

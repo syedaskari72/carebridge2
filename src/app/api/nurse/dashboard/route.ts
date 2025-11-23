@@ -156,6 +156,7 @@ export async function GET(request: NextRequest) {
       safetyStatus,
       todaysAppointments: todaysAppointments.map(booking => ({
         id: booking.id,
+        patientId: booking.patient.userId,
         name: booking.patient.user.name,
         condition: booking.serviceType,
         address: booking.address,

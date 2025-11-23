@@ -254,23 +254,23 @@ export default function SignUpPage() {
   const isProfessional = formData.userType === "NURSE" || formData.userType === "DOCTOR";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-2xl">
-        <CardHeader className="text-center">
-          <div className="mx-auto h-12 w-12 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center mb-4">
-            <span className="text-white font-bold text-xl">C</span>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cyan-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 md:bg-background py-8 md:py-12 px-4 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-2xl border-0 md:border shadow-none md:shadow-sm">
+        <CardHeader className="text-center pt-8 md:pt-6">
+          <div className="mx-auto h-16 w-16 md:h-12 md:w-12 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-2xl md:rounded-lg flex items-center justify-center mb-6 md:mb-4 shadow-lg">
+            <img src="/applogo.png" alt="CareBridge" className="w-12 h-12 md:w-8 md:h-8 object-contain" />
           </div>
-          <CardTitle className="text-2xl">Join CareBridge</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-3xl md:text-2xl font-bold">Join CareBridge</CardTitle>
+          <CardDescription className="text-base md:text-sm mt-2">
             Already have an account?{" "}
-            <Link href="/auth/signin" className="font-medium text-primary hover:underline">
+            <Link href="/auth/signin" className="font-semibold text-primary hover:underline">
               Sign in
             </Link>
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-6 md:px-6">
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-5 md:space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg">
                 <AlertCircle className="h-4 w-4" />
@@ -550,7 +550,7 @@ export default function SignUpPage() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full"
+              className="w-full h-12 md:h-10 text-base md:text-sm font-semibold"
             >
               {isLoading ? "Creating account..." : "Create account"}
             </Button>

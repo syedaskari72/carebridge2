@@ -33,25 +33,22 @@ export default function Header() {
   }, [status, session]);
 
   const handleSignOut = async () => {
+    if (!confirm("Are you sure you want to logout?")) {
+      return;
+    }
+    
     console.log("[Header] Starting logout process...");
+    
     try {
-      // Clear any local storage or session storage
-      localStorage.clear();
-      sessionStorage.clear();
-
-      // Sign out with NextAuth
-      await signOut({
-        callbackUrl: "/",
-        redirect: false
-      });
-
-      // Force a complete page reload to clear all state
-      window.location.href = "/";
+      await signOut({ redirect: false });
     } catch (error) {
       console.error("[Header] Logout error:", error);
-      // Fallback: force reload anyway
-      window.location.href = "/";
     }
+    
+    const isMobile = window.innerWidth < 768;
+    setTimeout(() => {
+      window.location.href = isMobile ? "/welcome" : "/";
+    }, 100);
   };
 
   const getNavigationItems = () => {
@@ -72,6 +69,7 @@ export default function Header() {
           { href: "/dashboard/nurse", label: "Dashboard" },
           { href: "/dashboard/nurse/assignments", label: "Assignments" },
           { href: "/dashboard/nurse/schedule", label: "Schedule" },
+          { href: "/assistant", label: "AI Assistant" },
         ];
       case "DOCTOR":
         return [
@@ -91,7 +89,7 @@ export default function Header() {
   const navigationItems = getNavigationItems();
 
   return (
-    <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm border-b border-border">
+    <header className="hidden md:block bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}

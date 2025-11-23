@@ -97,3 +97,38 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: "Failed to update booking" }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const resolvedParams = await params;
+    const booking = await prisma.booking.findUnique({
+      where: { id: resolvedParams.id },
+      include: { nurse: true },
+    });
+
+    if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+
+    // Only nurses can delete their completed/cancelled assignments
+    if (session.user.userType === "NURSE") {
+      const nurse = await prisma.nurse.findUnique({ where: { userId: session.user.id } });
+      if (booking.nurseId !== nurse?.id) {
+        return NextResponse.json({ error: "Access denied" }, { status: 403 });
+      }
+      if (!["COMPLETED", "CANCELLED"].includes(booking.status)) {
+        return NextResponse.json({ error: "Can only delete completed or cancelled assignments" }, { status: 400 });
+      }
+    } else if (session.user.userType !== "ADMIN") {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
+
+    await prisma.booking.delete({ where: { id: resolvedParams.id } });
+
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    console.error("[Booking][DELETE]", e);
+    return NextResponse.json({ error: "Failed to delete booking" }, { status: 500 });
+  }
+}

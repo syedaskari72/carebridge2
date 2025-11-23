@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { MessageSquare, Phone } from "lucide-react";
+import { createChatId } from "@/lib/chatUtils";
 
 interface Booking {
   id: string;
@@ -15,7 +18,8 @@ interface Booking {
   actualCost?: number;
   totalCost?: number;
   nurse?: {
-    user: { name: string; image?: string };
+    userId: string;
+    user: { name: string; image?: string; phone?: string };
     hourlyRate: number;
   };
 }
@@ -23,6 +27,7 @@ interface Booking {
 
 export default function BookingsPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filter, setFilter] = useState("all");
 
@@ -183,29 +188,38 @@ export default function BookingsPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 mt-4 md:mt-0">
+                <div className="flex flex-col gap-2 mt-4 md:mt-0 min-w-[200px]">
+                  {booking.nurse && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => router.push(`/chat/${createChatId(session?.user.id || "", booking.nurse?.userId || "")}`)}
+                        className="flex-1 px-3 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center justify-center gap-2"
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        Chat
+                      </button>
+                      <button
+                        onClick={() => window.location.href = `tel:${booking.nurse?.user.phone}`}
+                        className="px-3 py-2 text-sm border rounded-lg hover:bg-accent flex items-center justify-center"
+                      >
+                        <Phone className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
                   <button
                     onClick={() => router.push(`/bookings/${booking.id}`)}
-                    className="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50"
+                    className="px-4 py-2 text-sm border rounded-lg hover:bg-accent"
                   >
                     View Details
                   </button>
 
                   {booking.status === "confirmed" && (
-                    <>
-                      <button
-                        onClick={() => handleRescheduleBooking(booking.id)}
-                        className="px-4 py-2 text-cyan-600 border border-cyan-600 rounded-lg hover:bg-cyan-50"
-                      >
-                        Reschedule
-                      </button>
-                      <button
-                        onClick={() => handleCancelBooking(booking.id)}
-                        className="px-4 py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50"
-                      >
-                        Cancel
-                      </button>
-                    </>
+                    <button
+                      onClick={() => handleCancelBooking(booking.id)}
+                      className="px-4 py-2 text-sm text-red-600 border border-red-600 rounded-lg hover:bg-red-50"
+                    >
+                      Cancel
+                    </button>
                   )}
                 </div>
               </div>
