@@ -114,7 +114,6 @@ function BookNurseContent() {
 
   const handleBooking = async () => {
     try {
-      console.log("🚀 Starting booking process...");
       if (!session) {
         return router.push("/auth/signin");
       }
@@ -133,13 +132,25 @@ function BookNurseContent() {
         notes: notes || null
       };
       
-      console.log("📦 Booking payload:", bookingPayload);
-      
-      // Store booking data and show location modal directly
-      setBookingData(bookingPayload);
-      setShowLocationModal(true);
+      // Get patient's current location for the booking
+      try {
+        console.log("🌍 Getting your location for the booking...");
+        const { getCurrentLocationWithAddress } = await import("@/lib/geocoding");
+        const locationData = await getCurrentLocationWithAddress();
+        const patientAddress = locationData.address.fullAddress;
+        console.log("📍 Location found:", patientAddress);
+        
+        // Submit booking directly with GPS address
+        await submitBooking({ ...bookingPayload, address: patientAddress });
+      } catch (error) {
+        console.warn("📍 Location access failed:", error);
+        // Store booking data and show location modal
+        setBookingData(bookingPayload);
+        setShowLocationModal(true);
+        return; // Exit here, modal will handle the rest
+      }
     } catch (error) {
-      console.error("❌ Booking error:", error);
+      console.error("Booking error:", error);
       alert("Failed to book appointment. Please try again.");
     }
   };
@@ -151,29 +162,22 @@ function BookNurseContent() {
     }
 
     try {
-      console.log("📤 Submitting booking:", payload);
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       
-      console.log("📥 Response status:", res.status);
-      
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        console.error("❌ Booking failed:", err);
         throw new Error(err?.error || "Failed to create booking");
       }
       
-      const result = await res.json();
-      console.log("✅ Booking successful:", result);
-      
-      alert("✅ Booking confirmed! You will receive a confirmation email shortly.");
+      alert("Booking confirmed! You will receive a confirmation email shortly.");
       router.push("/bookings");
     } catch (error) {
-      console.error("❌ Booking submission error:", error);
-      alert("❌ Failed to book appointment. Please try again.");
+      console.error("Booking submission error:", error);
+      alert("Failed to book appointment. Please try again.");
     }
   };
 
@@ -288,7 +292,6 @@ function BookNurseContent() {
               </div>
               <div className="mt-6">
                 <Button
-                  type="button"
                   onClick={() => {
                     // If nurse is preselected, go directly to schedule
                     if (selectedNurse) {
@@ -370,9 +373,8 @@ function BookNurseContent() {
                 </div>
               )}
               <div className="flex gap-4 mt-6">
-                <Button type="button" variant="outline" onClick={() => setStep(1)}>Back</Button>
+                <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
                 <Button 
-                  type="button"
                   onClick={() => setStep(3)} 
                   disabled={!selectedNurse}
                   className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground"
@@ -392,51 +394,48 @@ function BookNurseContent() {
               <CardDescription>Choose your preferred date and time</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <form onSubmit={(e) => e.preventDefault()}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="date">Preferred Date</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={selectedDate}
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="time">Preferred Time</Label>
-                    <Select value={selectedTime} onValueChange={setSelectedTime}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select time" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="09:00">9:00 AM</SelectItem>
-                        <SelectItem value="10:00">10:00 AM</SelectItem>
-                        <SelectItem value="11:00">11:00 AM</SelectItem>
-                        <SelectItem value="14:00">2:00 PM</SelectItem>
-                        <SelectItem value="15:00">3:00 PM</SelectItem>
-                        <SelectItem value="16:00">4:00 PM</SelectItem>
-                        <SelectItem value="17:00">5:00 PM</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="mt-6">
-                  <Label htmlFor="notes">Additional Notes (Optional)</Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Any specific requirements or health information..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={3}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="date">Preferred Date</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
                   />
                 </div>
-              </form>
-              <div className="flex gap-4 mt-6">
-                <Button type="button" variant="outline" onClick={() => setStep(selectedNurse ? 2 : 1)}>Back</Button>
+                <div>
+                  <Label htmlFor="time">Preferred Time</Label>
+                  <Select value={selectedTime} onValueChange={setSelectedTime}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="09:00">9:00 AM</SelectItem>
+                      <SelectItem value="10:00">10:00 AM</SelectItem>
+                      <SelectItem value="11:00">11:00 AM</SelectItem>
+                      <SelectItem value="14:00">2:00 PM</SelectItem>
+                      <SelectItem value="15:00">3:00 PM</SelectItem>
+                      <SelectItem value="16:00">4:00 PM</SelectItem>
+                      <SelectItem value="17:00">5:00 PM</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="notes">Additional Notes (Optional)</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Any specific requirements or health information..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                />
+              </div>
+              <div className="flex gap-4">
+                <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
                 <Button 
-                  type="button"
                   onClick={() => setStep(4)} 
                   disabled={!selectedDate || !selectedTime}
                   className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground"
@@ -504,8 +503,8 @@ function BookNurseContent() {
                 )}
               </div>
               <div className="flex gap-4 mt-6">
-                <Button type="button" variant="outline" onClick={() => setStep(3)}>Back</Button>
-                <Button type="button" onClick={handleBooking} className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Button variant="outline" onClick={() => setStep(3)}>Back</Button>
+                <Button onClick={handleBooking} className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground">
                   Confirm Booking
                 </Button>
               </div>
