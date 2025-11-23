@@ -380,75 +380,47 @@ export default function NurseDashboard() {
           </Card>
         </div>
 
-        <div className="card bg-blue-50 border-blue-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-blue-900">Location Tracking</h3>
-              <p className="text-sm text-blue-700">
-                {location ? "Active" : "Disabled"}
-              </p>
-            </div>
-            <div className="text-2xl">
-              {location ? "📍" : "📍❌"}
-            </div>
-          </div>
-        </div>
-
-        <div className="card bg-red-50 border-red-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-red-900">Emergency</h3>
-              <p className="text-sm text-red-700">SOS Panic Button</p>
-            </div>
-            <button
-              onClick={handleSOS}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold"
-            >
-              🚨 SOS
-            </button>
-          </div>
-        </div>
       </div>
 
 
 
       {/* Assigned Patients */}
-      <Card className="mb-8">
+      <Card className="mb-6 sm:mb-8">
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>Today's Assignments</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">Today's Assignments</CardTitle>
             <Link href="/dashboard/nurse/assignments">
-              <Button variant="outline" size="sm">View All</Button>
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm">View All</Button>
             </Link>
           </div>
         </CardHeader>
         <CardContent>
         {loading ? (
-          <div className="text-center py-8 text-slate-500">
+          <div className="text-center py-8 text-muted-foreground">
             <div className="text-4xl mb-2">⏳</div>
             <p>Loading assignments...</p>
           </div>
         ) : !realNurseData || realNurseData.todaysAppointments.length === 0 ? (
-          <div className="text-center py-8 text-slate-500">
+          <div className="text-center py-8 text-muted-foreground">
             <div className="text-4xl mb-2">📋</div>
             <p>No assignments for today</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {realNurseData.todaysAppointments.map((patient: any) => (
-              <div key={patient.id} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-semibold text-lg">{patient.name}</h3>
-                    <p className="text-slate-600">{patient.condition}</p>
-                    <p className="text-sm text-slate-500">📍 {patient.address}</p>
-                    <p className="text-sm text-slate-500">🕐 {new Date(patient.nextVisit).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+              <div key={patient.id} className="border rounded-lg p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-3">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-base sm:text-lg">{patient.name}</h3>
+                    <p className="text-sm sm:text-base text-muted-foreground">{patient.condition}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">📍 {patient.address}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">🕐 {new Date(patient.nextVisit).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                     {patient.phone && (
-                      <p className="text-sm text-slate-500">📞 {patient.phone}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">📞 {patient.phone}</p>
                     )}
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  <div className="flex sm:flex-col gap-2">
+                    <Badge className={`text-xs ${
                       patient.priority === "EMERGENCY"
                         ? "bg-red-100 text-red-800"
                         : patient.priority === "URGENT"
@@ -456,8 +428,8 @@ export default function NurseDashboard() {
                         : "bg-green-100 text-green-800"
                     }`}>
                       {patient.priority.toLowerCase()}
-                    </span>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    </Badge>
+                    <Badge className={`text-xs ${
                       patient.status === "CONFIRMED"
                         ? "bg-blue-100 text-blue-800"
                         : patient.status === "PENDING"
@@ -465,23 +437,23 @@ export default function NurseDashboard() {
                         : "bg-gray-100 text-gray-800"
                     }`}>
                       {patient.status.toLowerCase()}
-                    </span>
+                    </Badge>
                   </div>
                 </div>
                 
-                <div className="flex gap-2">
-                  <button className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white py-2 px-4 rounded-lg">
+                <div className="grid grid-cols-2 sm:flex gap-2">
+                  <Button className="col-span-2 sm:flex-1 text-xs sm:text-sm">
                     Start Treatment
-                  </button>
-                  <button className="flex-1 border border-cyan-600 text-cyan-600 hover:bg-cyan-50 py-2 px-4 rounded-lg">
+                  </Button>
+                  <Button variant="outline" className="col-span-2 sm:flex-1 text-xs sm:text-sm">
                     View Details
-                  </button>
-                  <button className="px-4 py-2 border border-gray-300 text-slate-600 hover:bg-gray-50 rounded-lg">
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs sm:text-sm">
                     📞
-                  </button>
-                  <button className="px-4 py-2 border border-gray-300 text-slate-600 hover:bg-gray-50 rounded-lg">
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs sm:text-sm">
                     🗺️
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
@@ -491,40 +463,60 @@ export default function NurseDashboard() {
       </Card>
 
       {/* Prescription Management */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <PrescriptionManager />
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Link href="/dashboard/nurse/treatments" className="card hover:shadow-lg transition-shadow text-center">
-          <div className="text-4xl mb-3">📝</div>
-          <h3 className="font-semibold mb-2">Treatment Logs</h3>
-          <p className="text-sm text-slate-600">Update patient records</p>
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+        <Link href="/dashboard/nurse/treatments">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardContent className="p-4 sm:p-6 text-center">
+              <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">📝</div>
+              <h3 className="font-semibold text-sm sm:text-base mb-1">Treatment Logs</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">Update patient records</p>
+            </CardContent>
+          </Card>
         </Link>
 
-        <Link href="/dashboard/nurse/schedule" className="card hover:shadow-lg transition-shadow text-center">
-          <div className="text-4xl mb-3">📅</div>
-          <h3 className="font-semibold mb-2">My Schedule</h3>
-          <p className="text-sm text-slate-600">View availability</p>
+        <Link href="/dashboard/nurse/schedule">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardContent className="p-4 sm:p-6 text-center">
+              <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">📅</div>
+              <h3 className="font-semibold text-sm sm:text-base mb-1">My Schedule</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">View availability</p>
+            </CardContent>
+          </Card>
         </Link>
 
-        <Link href="/dashboard/nurse/safety" className="card hover:shadow-lg transition-shadow text-center">
-          <div className="text-4xl mb-3">🛡️</div>
-          <h3 className="font-semibold mb-2">Safety Center</h3>
-          <p className="text-sm text-muted-foreground">Emergency protocols & contacts</p>
+        <Link href="/dashboard/nurse/safety">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardContent className="p-4 sm:p-6 text-center">
+              <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">🛡️</div>
+              <h3 className="font-semibold text-sm sm:text-base mb-1">Safety Center</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">Emergency protocols & contacts</p>
+            </CardContent>
+          </Card>
         </Link>
 
-        <Link href="/dashboard/nurse/earnings" className="card hover:shadow-lg transition-shadow text-center">
-          <div className="text-4xl mb-3">💰</div>
-          <h3 className="font-semibold mb-2">Earnings</h3>
-          <p className="text-sm text-muted-foreground">Track payments</p>
+        <Link href="/dashboard/nurse/earnings">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardContent className="p-4 sm:p-6 text-center">
+              <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">💰</div>
+              <h3 className="font-semibold text-sm sm:text-base mb-1">Earnings</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">Track payments</p>
+            </CardContent>
+          </Card>
         </Link>
 
-        <Link href="/dashboard/nurse/subscription" className="card hover:shadow-lg transition-shadow text-center border-2 border-primary">
-          <div className="text-4xl mb-3">👑</div>
-          <h3 className="font-semibold mb-2">Subscription</h3>
-          <p className="text-sm text-muted-foreground">Manage your plan</p>
+        <Link href="/dashboard/nurse/subscription" className="col-span-2 lg:col-span-1">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 border-primary">
+            <CardContent className="p-4 sm:p-6 text-center">
+              <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">👑</div>
+              <h3 className="font-semibold text-sm sm:text-base mb-1">Subscription</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">Manage your plan</p>
+            </CardContent>
+          </Card>
         </Link>
       </div>
     </div>

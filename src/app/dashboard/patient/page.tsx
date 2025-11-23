@@ -174,6 +174,16 @@ export default function PatientDashboard() {
               </CardContent>
             </Card>
           </Link>
+
+          <Link href="/assistant">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardContent className="p-4 sm:p-6 text-center">
+                <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">🤖</div>
+                <h3 className="font-semibold text-sm sm:text-base mb-1">AI Assistant</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">Health chatbot</p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Next Medication Reminder */}

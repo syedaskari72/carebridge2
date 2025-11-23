@@ -109,27 +109,28 @@ export default function AssistantPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 h-[calc(100vh-200px)] flex flex-col">
-      <h1 className="text-3xl font-bold text-slate-900 mb-6">AI Health Assistant</h1>
+    <div className="w-full overflow-x-hidden">
+    <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8 h-[calc(100vh-180px)] sm:h-[calc(100vh-200px)] flex flex-col">
+      <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-6">AI Health Assistant</h1>
       
       {/* Chat Messages */}
-      <div className="flex-1 bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 bg-card rounded-lg border overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
           {messages.map((message) => (
             <div
               key={message.id}
               className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                className={`max-w-[85%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 rounded-lg ${
                   message.sender === "user"
-                    ? "bg-cyan-600 text-white"
-                    : "bg-gray-100 text-slate-900"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-foreground"
                 }`}
               >
-                <p className="text-sm">{message.text}</p>
+                <p className="text-xs sm:text-sm break-words">{message.text}</p>
                 <p className={`text-xs mt-1 ${
-                  message.sender === "user" ? "text-cyan-100" : "text-slate-500"
+                  message.sender === "user" ? "text-primary-foreground/70" : "text-muted-foreground"
                 }`}>
                   {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
@@ -139,11 +140,11 @@ export default function AssistantPage() {
           
           {isTyping && (
             <div className="flex justify-start">
-              <div className="bg-gray-100 text-slate-900 px-4 py-2 rounded-lg">
+              <div className="bg-muted px-3 sm:px-4 py-2 rounded-lg">
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
+                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
                 </div>
               </div>
             </div>
@@ -153,14 +154,14 @@ export default function AssistantPage() {
 
         {/* Quick Questions */}
         {messages.length === 1 && (
-          <div className="p-4 border-t border-gray-200 bg-gray-50">
-            <p className="text-sm text-slate-600 mb-3">Quick questions to get started:</p>
+          <div className="p-3 sm:p-4 border-t bg-muted/50">
+            <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">Quick questions to get started:</p>
             <div className="flex flex-wrap gap-2">
               {quickQuestions.map((question, index) => (
                 <button
                   key={index}
                   onClick={() => handleQuickQuestion(question)}
-                  className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-full hover:bg-cyan-50 hover:border-cyan-300 transition-colors"
+                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-card border rounded-full hover:bg-primary/10 hover:border-primary transition-colors"
                 >
                   {question}
                 </button>
@@ -170,30 +171,31 @@ export default function AssistantPage() {
         )}
 
         {/* Input Area */}
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex space-x-2">
+        <div className="p-3 sm:p-4 border-t">
+          <div className="flex gap-2">
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Ask me anything about your health..."
-              className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 resize-none"
+              className="flex-1 p-2 sm:p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary resize-none text-sm bg-background"
               rows={1}
               disabled={isTyping}
             />
             <button
               onClick={handleSendMessage}
               disabled={!inputText.trim() || isTyping}
-              className="px-6 py-3 button-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 sm:px-6 py-2 sm:py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-medium"
             >
               Send
             </button>
           </div>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-muted-foreground mt-2">
             🤖 Powered by Groq AI (Llama 3.3) • ⚠️ This provides general health information only. Always consult healthcare professionals for medical advice.
           </p>
         </div>
       </div>
+    </div>
     </div>
   );
 }
