@@ -52,7 +52,7 @@ export default function MobileHeader() {
   };
 
   return (
-    <header className={`md:hidden sticky top-0 z-40 bg-gradient-to-b from-cyan-500 to-cyan-600 text-white pt-safe transition-all duration-300 rounded-b-3xl ${
+    <header className={`md:hidden bg-gradient-to-b from-cyan-500 to-cyan-600 text-white pt-safe transition-all duration-300 rounded-b-3xl ${
       scrolled ? "shadow-none" : "shadow-lg"
     }`}>
       <div className={`px-4 transition-all duration-300 ${

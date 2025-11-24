@@ -81,8 +81,10 @@ export default function RootLayout({
             <NurseStatusProvider>
               <DrawerProvider>
                 <div className="flex flex-col min-h-screen w-full overflow-x-hidden">
-                  <Header />
-                  <MobileHeader />
+                  <div className="sticky top-0 z-50">
+                    <Header />
+                    <MobileHeader />
+                  </div>
                   <main className="flex-1 pb-20 md:pb-0 w-full overflow-x-hidden relative z-10">{children}</main>
                   <Footer />
                   <BottomNav />

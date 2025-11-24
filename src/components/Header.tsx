@@ -89,7 +89,7 @@ export default function Header() {
   const navigationItems = getNavigationItems();
 
   return (
-    <header className="hidden md:block sticky top-0 z-50 bg-gradient-to-b from-cyan-500 to-cyan-600 text-white shadow-lg">
+    <header className="hidden md:block bg-gradient-to-b from-cyan-500 to-cyan-600 text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
