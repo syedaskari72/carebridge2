@@ -254,11 +254,11 @@ export default function SignUpPage() {
   const isProfessional = formData.userType === "NURSE" || formData.userType === "DOCTOR";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background py-8 md:py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-8 md:py-12 px-4 sm:px-6 lg:px-8 overflow-y-auto scrollbar-hide">
       <Card className="w-full max-w-2xl border-0 md:border shadow-none md:shadow-sm">
-        <CardHeader className="text-center pt-8 md:pt-6">
-          <div className="mx-auto h-16 w-16 md:h-12 md:w-12 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-2xl md:rounded-lg flex items-center justify-center mb-6 md:mb-4 shadow-lg">
-            <img src="/applogo.png" alt="CareBridge" className="w-12 h-12 md:w-8 md:h-8 object-contain" />
+        <CardHeader className="text-center pt-6 md:pt-6">
+          <div className="mx-auto h-12 w-12 md:h-12 md:w-12 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-2xl md:rounded-lg flex items-center justify-center mb-4 md:mb-4 shadow-lg">
+            <img src="/applogo.png" alt="CareBridge" className="w-8 h-8 md:w-8 md:h-8 object-contain" />
           </div>
           <CardTitle className="text-3xl md:text-2xl font-bold">Join CareBridge</CardTitle>
           <CardDescription className="text-base md:text-sm mt-2">
