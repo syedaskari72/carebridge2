@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { MessageSquare, Phone } from "lucide-react";
+import { createChatId } from "@/lib/chatUtils";
 
 interface Booking {
   id: string;
@@ -15,7 +18,8 @@ interface Booking {
   actualCost?: number;
   totalCost?: number;
   nurse?: {
-    user: { name: string; image?: string };
+    userId: string;
+    user: { name: string; image?: string; phone?: string };
     hourlyRate: number;
   };
 }
@@ -23,6 +27,7 @@ interface Booking {
 
 export default function BookingsPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filter, setFilter] = useState("all");
 
@@ -47,11 +52,11 @@ export default function BookingsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "CONFIRMED": return "bg-green-100 text-green-800";
-      case "PENDING": return "bg-yellow-100 text-yellow-800";
-      case "COMPLETED": return "bg-blue-100 text-blue-800";
-      case "CANCELLED": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "CONFIRMED": return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+      case "PENDING": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
+      case "COMPLETED": return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+      case "CANCELLED": return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+      default: return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200";
     }
   };
 
@@ -93,13 +98,13 @@ export default function BookingsPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">My Bookings</h1>
+        <h1 className="text-3xl font-bold text-foreground">My Bookings</h1>
         
         {/* Filter */}
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
+          className="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-cyan-500 bg-background text-foreground"
         >
           <option value="all">All Bookings</option>
           <option value="pending">Pending</option>
@@ -113,7 +118,7 @@ export default function BookingsPage() {
         <div className="text-center py-12">
           <div className="text-6xl mb-4">📅</div>
           <h2 className="text-xl font-semibold mb-2">No bookings found</h2>
-          <p className="text-slate-600 mb-6">You haven't made any bookings yet.</p>
+          <p className="text-muted-foreground mb-6">You haven't made any bookings yet.</p>
           <a href="/book" className="button-primary">
             Book Your First Service
           </a>
@@ -132,14 +137,14 @@ export default function BookingsPage() {
                       <h3 className="font-semibold text-lg">
                         {booking.serviceType === "NURSE_VISIT" ? "Nurse Visit" : booking.serviceType === "LAB_SERVICE" ? "Lab Service" : booking.serviceType}
                       </h3>
-                      <p className="text-slate-600">{booking.nurse?.user?.name ? `with ${booking.nurse.user.name}` : ""}</p>
+                      <p className="text-muted-foreground">{booking.nurse?.user?.name ? `with ${booking.nurse.user.name}` : ""}</p>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(booking.status)}`}>
                       {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                     </span>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-slate-600">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
                     <div>
                       <strong>Date:</strong> {new Date(booking.appointmentDate).toLocaleDateString()}
                     </div>
@@ -152,7 +157,7 @@ export default function BookingsPage() {
                   </div>
                   
                   {booking.notes && (
-                    <div className="mt-2 text-sm text-slate-600">
+                    <div className="mt-2 text-sm text-muted-foreground">
                       <strong>Notes:</strong> {booking.notes}
                     </div>
                   )}
@@ -183,29 +188,38 @@ export default function BookingsPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 mt-4 md:mt-0">
+                <div className="flex flex-col gap-2 mt-4 md:mt-0 min-w-[200px]">
+                  {booking.nurse && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => router.push(`/chat/${createChatId(session?.user.id || "", booking.nurse?.userId || "")}`)}
+                        className="flex-1 px-3 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center justify-center gap-2"
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        Chat
+                      </button>
+                      <button
+                        onClick={() => window.location.href = `tel:${booking.nurse?.user.phone}`}
+                        className="px-3 py-2 text-sm border rounded-lg hover:bg-accent flex items-center justify-center"
+                      >
+                        <Phone className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
                   <button
                     onClick={() => router.push(`/bookings/${booking.id}`)}
-                    className="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50"
+                    className="px-4 py-2 text-sm border rounded-lg hover:bg-accent"
                   >
                     View Details
                   </button>
 
                   {booking.status === "confirmed" && (
-                    <>
-                      <button
-                        onClick={() => handleRescheduleBooking(booking.id)}
-                        className="px-4 py-2 text-cyan-600 border border-cyan-600 rounded-lg hover:bg-cyan-50"
-                      >
-                        Reschedule
-                      </button>
-                      <button
-                        onClick={() => handleCancelBooking(booking.id)}
-                        className="px-4 py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50"
-                      >
-                        Cancel
-                      </button>
-                    </>
+                    <button
+                      onClick={() => handleCancelBooking(booking.id)}
+                      className="px-4 py-2 text-sm text-red-600 border border-red-600 rounded-lg hover:bg-red-50"
+                    >
+                      Cancel
+                    </button>
                   )}
                 </div>
               </div>

@@ -10,6 +10,8 @@ export default withAuth(
     if (
       pathname.startsWith("/auth/") ||
       pathname === "/" ||
+      pathname === "/welcome" ||
+      pathname === "/onboarding" ||
       pathname.startsWith("/api/auth/") ||
       pathname.startsWith("/_next/") ||
       pathname.startsWith("/favicon") ||
@@ -74,6 +76,8 @@ export default withAuth(
         if (
           pathname.startsWith("/auth/") ||
           pathname === "/" ||
+          pathname === "/welcome" ||
+          pathname === "/onboarding" ||
           pathname.startsWith("/api/auth/") ||
           pathname.startsWith("/_next/") ||
           pathname.startsWith("/favicon") ||

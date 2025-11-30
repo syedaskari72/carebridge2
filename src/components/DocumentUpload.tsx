@@ -134,9 +134,9 @@ export default function DocumentUpload({ documents, onDocumentUploaded, isVerifi
         <div className="space-y-4">
           <h3 className="font-medium">Upload New Document</h3>
           
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <Select value={selectedType} onValueChange={setSelectedType}>
-              <SelectTrigger className="flex-1">
+              <SelectTrigger className="flex-1 h-10">
                 <SelectValue placeholder="Select document type" />
               </SelectTrigger>
               <SelectContent>
@@ -151,10 +151,10 @@ export default function DocumentUpload({ documents, onDocumentUploaded, isVerifi
             <Button
               onClick={() => fileInputRef.current?.click()}
               disabled={!selectedType || uploading}
-              className="flex items-center gap-2"
+              size="icon"
+              className="h-10 w-10"
             >
               <Upload className="h-4 w-4" />
-              {uploading ? "Uploading..." : "Choose File"}
             </Button>
           </div>
           

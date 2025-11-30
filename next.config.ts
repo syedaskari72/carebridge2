@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  reactStrictMode: false,
   serverExternalPackages: ["@prisma/client", "prisma"],
   // Ensure static files are properly handled
   trailingSlash: false,

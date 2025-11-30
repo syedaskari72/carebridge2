@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
       password,
       phone,
       cnic,
+      gender,
       address,
       userType,
       department,
@@ -53,6 +54,8 @@ export async function POST(request: NextRequest) {
       consultationFee,
       bio,
     } = body;
+
+    console.log('[Register] Gender received:', gender);
 
     // Validate required fields
     if (!name || !email || !password || !userType) {
@@ -160,9 +163,12 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         phone,
         cnic,
+        gender: gender || null,
         userType: userType as UserType,
       },
     });
+
+    console.log('[Register] User created with gender:', user.gender);
 
     // Create role-specific profile
     switch (userType) {

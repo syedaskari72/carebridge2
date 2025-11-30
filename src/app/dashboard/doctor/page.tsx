@@ -234,214 +234,251 @@ export default function DoctorDashboard() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="w-full overflow-x-hidden bg-background">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-0 pb-4 sm:pb-8">
       {/* Welcome Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">
+      <div className="mb-6 sm:mb-8 pt-6 sm:pt-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
           Welcome, Dr. {session.user.name}
         </h1>
-        <p className="text-slate-600">Review cases and manage patient care</p>
+        <p className="text-muted-foreground">Review cases and manage patient care</p>
       </div>
 
       {/* On-Call Status */}
-      <div className="card mb-8 bg-blue-50 border-blue-200">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-blue-900">Emergency On-Call Status</h3>
-            <p className="text-sm text-blue-700">
+      <Card className="mb-6 bg-blue-50 dark:bg-blue-950 border-blue-200">
+        <CardContent className="p-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex-1">
+            <h3 className="font-semibold text-blue-900 dark:text-blue-100">Emergency On-Call Status</h3>
+            <p className="text-sm text-blue-700 dark:text-blue-300">
               {isOnCall ? "You are available for emergency cases" : "You are not available for emergencies"}
             </p>
           </div>
-          <button
+          <Button
             onClick={toggleOnCall}
-            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+            className={`w-full sm:w-auto ${
               isOnCall 
-                ? "bg-red-600 hover:bg-red-700 text-white" 
-                : "bg-green-600 hover:bg-green-700 text-white"
+                ? "bg-red-600 hover:bg-red-700" 
+                : "bg-green-600 hover:bg-green-700"
             }`}
           >
             {isOnCall ? "Go Off-Call" : "Go On-Call"}
-          </button>
+          </Button>
         </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Emergency Cases Alert */}
       {doctorData.emergencyCases.length > 0 && (
-        <div className="card mb-8 bg-red-50 border-red-200">
+        <Card className="mb-6 bg-red-50 dark:bg-red-950 border-red-200">
+          <CardContent className="p-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-red-900">🚨 Emergency Cases</h2>
-            <span className="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+            <h2 className="text-lg sm:text-xl font-semibold text-red-900 dark:text-red-100">🚨 Emergency Cases</h2>
+            <Badge className="bg-red-600 text-white">
               {doctorData.emergencyCases.length} Active
-            </span>
+            </Badge>
           </div>
           
           <div className="space-y-3">
             {doctorData.emergencyCases.map((emergency) => (
-              <div key={emergency.id} className="bg-white border border-red-200 rounded-lg p-4">
-                <div className="flex justify-between items-start">
+              <div key={emergency.id} className="bg-white dark:bg-gray-800 border border-red-200 rounded-lg p-3 sm:p-4">
+                <div className="flex flex-col gap-3">
                   <div>
-                    <h3 className="font-semibold text-red-900">{emergency.type} Emergency</h3>
-                    <p className="text-sm text-red-700">Patient: {emergency.patientName}</p>
-                    <p className="text-sm text-red-600">📍 {emergency.location}</p>
-                    <p className="text-sm text-red-500">⏰ {emergency.timeAgo}</p>
+                    <h3 className="font-semibold text-red-900 dark:text-red-100 text-sm sm:text-base">{emergency.type} Emergency</h3>
+                    <p className="text-xs sm:text-sm text-red-700 dark:text-red-300">Patient: {emergency.patientName}</p>
+                    <p className="text-xs sm:text-sm text-red-600 dark:text-red-400">📍 {emergency.location}</p>
+                    <p className="text-xs sm:text-sm text-red-500">⏰ {emergency.timeAgo}</p>
                   </div>
-                  <div className="flex gap-2">
-                    <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button className="flex-1 bg-red-600 hover:bg-red-700">
                       Accept Case
-                    </button>
-                    <button className="border border-red-600 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg">
+                    </Button>
+                    <Button variant="outline" className="flex-1 border-red-600 text-red-600">
                       View Details
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Today's Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-        <div className="card text-center">
-          <div className="text-2xl font-bold text-cyan-600">{doctorData.todayStats.totalCases}</div>
-          <p className="text-sm text-slate-600">Total Cases</p>
-        </div>
-        <div className="card text-center">
-          <div className="text-2xl font-bold text-green-600">{doctorData.todayStats.approved}</div>
-          <p className="text-sm text-slate-600">Approved</p>
-        </div>
-        <div className="card text-center">
-          <div className="text-2xl font-bold text-orange-600">{doctorData.todayStats.pending}</div>
-          <p className="text-sm text-slate-600">Pending</p>
-        </div>
-        <div className="card text-center">
-          <div className="text-2xl font-bold text-red-600">{doctorData.todayStats.emergencies}</div>
-          <p className="text-sm text-slate-600">Emergencies</p>
-        </div>
-        <div className="card text-center">
-          <div className="text-2xl font-bold text-purple-600">PKR {doctorData.todayStats.earnings}</div>
-          <p className="text-sm text-slate-600">Earnings</p>
-        </div>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <Card>
+          <CardContent className="p-3 sm:p-4 text-center">
+          <div className="text-xl sm:text-2xl font-bold text-cyan-600">{doctorData.todayStats.totalCases}</div>
+          <p className="text-xs sm:text-sm text-muted-foreground">Total Cases</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 sm:p-4 text-center">
+          <div className="text-xl sm:text-2xl font-bold text-green-600">{doctorData.todayStats.approved}</div>
+          <p className="text-xs sm:text-sm text-muted-foreground">Approved</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 sm:p-4 text-center">
+          <div className="text-xl sm:text-2xl font-bold text-orange-600">{doctorData.todayStats.pending}</div>
+          <p className="text-xs sm:text-sm text-muted-foreground">Pending</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 sm:p-4 text-center">
+          <div className="text-xl sm:text-2xl font-bold text-red-600">{doctorData.todayStats.emergencies}</div>
+          <p className="text-xs sm:text-sm text-muted-foreground">Emergencies</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 sm:p-4 text-center">
+          <div className="text-xl sm:text-2xl font-bold text-purple-600">PKR {doctorData.todayStats.earnings}</div>
+          <p className="text-xs sm:text-sm text-muted-foreground">Earnings</p>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
         {/* Pending Cases for Approval */}
-        <div className="card">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">Cases Pending Approval</h2>
-            <Link href="/dashboard/doctor/cases" className="text-cyan-600 hover:text-cyan-700">
-              View all cases
+        <Card>
+          <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-lg sm:text-xl">Cases Pending Approval</CardTitle>
+            <Link href="/dashboard/doctor/cases">
+              <Button variant="ghost" size="sm" className="text-xs sm:text-sm">View all</Button>
             </Link>
           </div>
+          </CardHeader>
+          <CardContent>
 
           {doctorData.pendingCases.length === 0 ? (
-            <div className="text-center py-8 text-slate-500">
+            <div className="text-center py-8 text-muted-foreground">
               <div className="text-4xl mb-2">✅</div>
               <p>No pending cases</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {doctorData.pendingCases.map((case_) => (
-                <div key={case_.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="font-semibold">{case_.patientName}</h3>
-                      <p className="text-sm text-slate-600">Age: {case_.age} • {case_.condition}</p>
-                      <p className="text-sm text-slate-500">Service: {case_.requestedService}</p>
-                      <p className="text-sm text-green-600 font-medium">Estimated: PKR {case_.estimatedCost}</p>
+                <div key={case_.id} className="border rounded-lg p-3 sm:p-4">
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-2 mb-3">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-sm sm:text-base">{case_.patientName}</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Age: {case_.age} • {case_.condition}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">Service: {case_.requestedService}</p>
+                      <p className="text-xs sm:text-sm text-green-600 font-medium">Estimated: PKR {case_.estimatedCost}</p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      case_.urgency === "urgent" 
-                        ? "bg-red-100 text-red-800"
-                        : "bg-green-100 text-green-800"
-                    }`}>
+                    <Badge className={case_.urgency === "urgent" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}>
                       {case_.urgency}
-                    </span>
+                    </Badge>
                   </div>
                   
-                  <div className="flex gap-2">
-                    <button
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
                       onClick={() => handleApproveCase(case_.id)}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg"
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-xs sm:text-sm"
+                      size="sm"
                     >
                       Approve
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => handleRejectCase(case_.id)}
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg"
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-xs sm:text-sm"
+                      size="sm"
                     >
                       Reject
-                    </button>
-                    <Link
-                      href={`/dashboard/doctor/cases/${case_.id}`}
-                      className="px-4 py-2 border border-cyan-600 text-cyan-600 hover:bg-cyan-50 rounded-lg text-center"
-                    >
-                      Details
+                    </Button>
+                    <Link href={`/dashboard/doctor/cases/${case_.id}`} className="flex-1">
+                      <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
+                        Details
+                      </Button>
                     </Link>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Recommended Nurses */}
-        <div className="card">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">Recommended Nurses</h2>
-            <Link href="/dashboard/doctor/nurses" className="text-cyan-600 hover:text-cyan-700">
-              View all nurses
+        <Card>
+          <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-lg sm:text-xl">Recommended Nurses</CardTitle>
+            <Link href="/dashboard/doctor/nurses">
+              <Button variant="ghost" size="sm" className="text-xs sm:text-sm">View all</Button>
             </Link>
           </div>
+          </CardHeader>
+          <CardContent>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {doctorData.recommendedNurses.map((nurse) => (
-              <div key={nurse.id} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold">{nurse.name}</h3>
-                    <p className="text-sm text-slate-600">{nurse.department}</p>
+              <div key={nurse.id} className="border rounded-lg p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-sm sm:text-base">{nurse.name}</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{nurse.department}</p>
                     <div className="flex items-center mt-1">
                       <span className="text-yellow-500">★</span>
-                      <span className="ml-1 text-sm font-medium">{nurse.rating}</span>
+                      <span className="ml-1 text-xs sm:text-sm font-medium">{nurse.rating}</span>
                     </div>
-                    <p className="text-sm text-green-600 mt-1">{nurse.availability}</p>
+                    <p className="text-xs sm:text-sm text-green-600 mt-1">{nurse.availability}</p>
                   </div>
-                  <button className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg text-sm">
+                  <Button size="sm" className="w-full sm:w-auto text-xs sm:text-sm">
                     Recommend
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
-        <Link href="/dashboard/doctor/prescriptions" className="card hover:shadow-lg transition-shadow text-center">
-          <div className="text-4xl mb-3">💊</div>
-          <h3 className="font-semibold mb-2">Prescriptions</h3>
-          <p className="text-sm text-slate-600">Manage medications</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mt-6 sm:mt-8">
+        <Link href="/dashboard/doctor/nurses">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardContent className="p-4 sm:p-6 text-center">
+              <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">👩⚕️</div>
+              <h3 className="font-semibold text-sm sm:text-base mb-1">All Nurses</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">View registered nurses</p>
+            </CardContent>
+          </Card>
         </Link>
 
-        <Link href="/dashboard/doctor/consultations" className="card hover:shadow-lg transition-shadow text-center">
-          <div className="text-4xl mb-3">🩺</div>
-          <h3 className="font-semibold mb-2">Consultations</h3>
-          <p className="text-sm text-slate-600">Patient consultations</p>
+        <Link href="/dashboard/doctor/prescriptions">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardContent className="p-4 sm:p-6 text-center">
+              <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">💊</div>
+              <h3 className="font-semibold text-sm sm:text-base mb-1">Prescriptions</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">Manage medications</p>
+            </CardContent>
+          </Card>
         </Link>
 
-        <Link href="/dashboard/doctor/reports" className="card hover:shadow-lg transition-shadow text-center">
-          <div className="text-4xl mb-3">📊</div>
-          <h3 className="font-semibold mb-2">Reports</h3>
-          <p className="text-sm text-slate-600">Analytics & insights</p>
+        <Link href="/dashboard/doctor/consultations">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardContent className="p-4 sm:p-6 text-center">
+              <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">🩺</div>
+              <h3 className="font-semibold text-sm sm:text-base mb-1">Consultations</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">Patient consultations</p>
+            </CardContent>
+          </Card>
         </Link>
 
-        <Link href="/dashboard/doctor/schedule" className="card hover:shadow-lg transition-shadow text-center">
-          <div className="text-4xl mb-3">📅</div>
-          <h3 className="font-semibold mb-2">Schedule</h3>
-          <p className="text-sm text-slate-600">Manage availability</p>
+        <Link href="/dashboard/doctor/schedule">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardContent className="p-4 sm:p-6 text-center">
+              <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">📅</div>
+              <h3 className="font-semibold text-sm sm:text-base mb-1">Schedule</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">Manage availability</p>
+            </CardContent>
+          </Card>
         </Link>
+      </div>
       </div>
     </div>
   );

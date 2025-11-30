@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Clock, Phone, CheckCircle, XCircle, Filter } from "lucide-react";
+import { MapPin, Clock, Phone, CheckCircle, XCircle, Filter, MessageSquare, Trash2 } from "lucide-react";
+import { createChatId } from "@/lib/chatUtils";
 
 interface Assignment {
   id: string;
@@ -18,6 +19,7 @@ interface Assignment {
   address: string;
   notes?: string;
   patient: {
+    userId: string;
     user: {
       name: string;
       phone?: string;
@@ -73,13 +75,34 @@ export default function NurseAssignmentsPage() {
       });
 
       if (res.ok) {
-        await loadAssignments(); // Reload assignments
+        await loadAssignments();
       } else {
         alert("Failed to update assignment status");
       }
     } catch (e) {
       console.error("Failed to update status:", e);
       alert("Failed to update assignment status");
+    }
+  };
+
+  const handleDeleteAssignment = async (assignmentId: string) => {
+    if (!confirm("Are you sure you want to delete this assignment? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/bookings/${assignmentId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        await loadAssignments();
+      } else {
+        alert("Failed to delete assignment");
+      }
+    } catch (e) {
+      console.error("Failed to delete assignment:", e);
+      alert("Failed to delete assignment");
     }
   };
 
@@ -254,6 +277,24 @@ export default function NurseAssignmentsPage() {
 
                   {/* Action buttons */}
                   <div className="flex flex-col gap-2 min-w-[200px]">
+                    <div className="flex gap-2 mb-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => router.push(`/chat/${createChatId(session?.user.id || "", assignment.patient.userId)}`)}
+                        className="flex-1"
+                      >
+                        <MessageSquare className="w-4 h-4 mr-1" />
+                        Chat
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => window.location.href = `tel:${assignment.patient.user.phone}`}
+                      >
+                        <Phone className="w-4 h-4" />
+                      </Button>
+                    </div>
                     {assignment.status === "PENDING" && (
                       <div className="flex gap-2">
                         <Button
@@ -304,9 +345,20 @@ export default function NurseAssignmentsPage() {
                     )}
 
                     {(assignment.status === "COMPLETED" || assignment.status === "CANCELLED") && (
-                      <div className="text-center text-sm text-muted-foreground">
-                        {assignment.status === "COMPLETED" ? "✅ Completed" : "❌ Cancelled"}
-                      </div>
+                      <>
+                        <div className="text-center text-sm text-muted-foreground mb-2">
+                          {assignment.status === "COMPLETED" ? "✅ Completed" : "❌ Cancelled"}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteAssignment(assignment.id)}
+                          className="w-full"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Delete
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>

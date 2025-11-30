@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertCircle, Upload, MapPin } from "lucide-react";
+import { AlertCircle, Upload, MapPin, Eye, EyeOff } from "lucide-react";
 import { validatePakistaniCNIC, validatePakistaniPhone, formatCNIC, formatPakistaniPhone } from "@/lib/validation";
 import { getCurrentLocationWithAddress } from "@/lib/geocoding";
 import ErrorModal from "@/components/ErrorModal";
@@ -22,6 +22,7 @@ export default function SignUpPage() {
     confirmPassword: "",
     phone: "",
     cnic: "",
+    gender: "",
     address: "",
     userType: "PATIENT",
     // Professional fields
@@ -37,6 +38,8 @@ export default function SignUpPage() {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorModal, setErrorModal] = useState<{
     isOpen: boolean;
     title?: string;
@@ -251,23 +254,23 @@ export default function SignUpPage() {
   const isProfessional = formData.userType === "NURSE" || formData.userType === "DOCTOR";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-2xl">
-        <CardHeader className="text-center">
-          <div className="mx-auto h-12 w-12 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center mb-4">
-            <span className="text-white font-bold text-xl">C</span>
+    <div className="min-h-screen flex items-center justify-center bg-background py-8 md:py-12 px-4 sm:px-6 lg:px-8 overflow-y-auto scrollbar-hide">
+      <Card className="w-full max-w-2xl border-0 md:border shadow-none md:shadow-sm">
+        <CardHeader className="text-center pt-6 md:pt-6">
+          <div className="mx-auto h-12 w-12 md:h-12 md:w-12 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-2xl md:rounded-lg flex items-center justify-center mb-4 md:mb-4 shadow-lg">
+            <img src="/applogo.png" alt="CareBridge" className="w-8 h-8 md:w-8 md:h-8 object-contain" />
           </div>
-          <CardTitle className="text-2xl">Join CareBridge</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-3xl md:text-2xl font-bold">Join CareBridge</CardTitle>
+          <CardDescription className="text-base md:text-sm mt-2">
             Already have an account?{" "}
-            <Link href="/auth/signin" className="font-medium text-primary hover:underline">
+            <Link href="/auth/signin" className="font-semibold text-primary hover:underline">
               Sign in
             </Link>
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-6 md:px-6">
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-5 md:space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg">
                 <AlertCircle className="h-4 w-4" />
@@ -290,20 +293,20 @@ export default function SignUpPage() {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={handleChange}
-                    placeholder="Enter your full name"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Enter your full name"
+                />
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="cnic">CNIC</Label>
                   <Input
@@ -318,6 +321,20 @@ export default function SignUpPage() {
                   {validationErrors.cnic && (
                     <p className="text-sm text-red-600">{validationErrors.cnic}</p>
                   )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="gender">Gender</Label>
+                  <Select value={formData.gender} onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MALE">Male</SelectItem>
+                      <SelectItem value="FEMALE">Female</SelectItem>
+                      <SelectItem value="OTHER">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -484,28 +501,48 @@ export default function SignUpPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    required
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Create a strong password"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="Create a strong password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    required
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    placeholder="Confirm your password"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      required
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      placeholder="Confirm your password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -513,7 +550,7 @@ export default function SignUpPage() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full"
+              className="w-full h-12 md:h-10 text-base md:text-sm font-semibold"
             >
               {isLoading ? "Creating account..." : "Create account"}
             </Button>

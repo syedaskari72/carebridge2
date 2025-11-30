@@ -22,7 +22,7 @@ export default function PatientRecordsPage() {
       return;
     }
 
-    if (session.user.userType !== "PATIENT") {
+    if (session.user.userType !== "PATIENT" && session.user.userType !== "NURSE") {
       router.push(`/dashboard/${session.user.userType.toLowerCase()}`);
       return;
     }
@@ -32,7 +32,10 @@ export default function PatientRecordsPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('/api/patient/records');
+        const urlParams = new URLSearchParams(window.location.search);
+        const patientId = urlParams.get('patientId');
+        const url = patientId ? `/api/patient/records?patientId=${patientId}` : '/api/patient/records';
+        const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
           setRecords(data);
@@ -41,8 +44,23 @@ export default function PatientRecordsPage() {
         console.error('Failed to load patient records', e);
       }
     };
-    if (session && session.user.userType === 'PATIENT') load();
+    if (session) load();
   }, [session]);
+
+  const refreshRecords = async () => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const patientId = urlParams.get('patientId');
+      const url = patientId ? `/api/patient/records?patientId=${patientId}` : '/api/patient/records';
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setRecords(data);
+      }
+    } catch (e) {
+      console.error('Failed to refresh records', e);
+    }
+  };
 
   if (!records) {
     return <div className="flex items-center justify-center min-h-screen">Loading records...</div>;
@@ -52,49 +70,54 @@ export default function PatientRecordsPage() {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
-  if (!session || session.user.userType !== "PATIENT") {
+  if (!session || (session.user.userType !== "PATIENT" && session.user.userType !== "NURSE")) {
     return null;
   }
 
   const tabs = [
     { id: "overview", label: "Overview", icon: "📋" },
-    { id: "medical-history", label: "Medical History", icon: "📚" },
     { id: "prescriptions", label: "Prescriptions", icon: "💊" },
     { id: "treatments", label: "Treatment History", icon: "🏥" },
-    { id: "consultations", label: "Consultations", icon: "🩺" },
-    { id: "tracking", label: "Progress Tracking", icon: "📈" },
   ];
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Medical Records</h1>
-          <p className="text-slate-600">Complete health history and treatment tracking</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Medical Records</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Complete health history and treatment tracking</p>
         </div>
-        <Link
-          href="/dashboard/patient"
-          className="text-cyan-600 hover:text-cyan-700 flex items-center gap-2"
-        >
-          ← Back to Dashboard
-        </Link>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveTab('add-record')}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm"
+          >
+            + Add Record
+          </button>
+          <Link
+            href="/dashboard/patient"
+            className="px-4 py-2 border rounded-lg text-sm font-medium"
+          >
+            ← Back
+          </Link>
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 mb-8">
-        <nav className="flex space-x-8">
+      <div className="border-b border-border mb-6 overflow-x-auto">
+        <nav className="flex space-x-4 sm:space-x-8 min-w-max">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
                 activeTab === tab.id
-                  ? "border-cyan-500 text-cyan-600"
-                  : "border-transparent text-slate-500 hover:text-slate-700"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground"
               }`}
             >
-              <span className="mr-2">{tab.icon}</span>
-              {tab.label}
+              <span className="mr-1 sm:mr-2">{tab.icon}</span>
+              <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
         </nav>
@@ -124,28 +147,36 @@ export default function PatientRecordsPage() {
           <div className="card">
             <h2 className="text-xl font-semibold mb-4">Medical Conditions</h2>
             <div className="space-y-2">
-              {records.personalInfo.conditions.map((condition: string, index: number) => (
-                <span
-                  key={index}
-                  className="inline-block bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm mr-2 mb-2"
-                >
-                  {condition}
-                </span>
-              ))}
+              {!records.personalInfo.conditions || records.personalInfo.conditions.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No medical conditions recorded</p>
+              ) : (
+                records.personalInfo.conditions.map((condition: string, index: number) => (
+                  <span
+                    key={index}
+                    className="inline-block bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm mr-2 mb-2"
+                  >
+                    {condition}
+                  </span>
+                ))
+              )}
             </div>
           </div>
 
           <div className="card">
             <h2 className="text-xl font-semibold mb-4">Allergies</h2>
             <div className="space-y-2">
-              {records.personalInfo.allergies.map((allergy: string, index: number) => (
-                <span
-                  key={index}
-                  className="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm mr-2 mb-2"
-                >
-                  ⚠️ {allergy}
-                </span>
-              ))}
+              {!records.personalInfo.allergies || records.personalInfo.allergies.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No allergies recorded</p>
+              ) : (
+                records.personalInfo.allergies.map((allergy: string, index: number) => (
+                  <span
+                    key={index}
+                    className="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm mr-2 mb-2"
+                  >
+                    ⚠️ {allergy}
+                  </span>
+                ))
+              )}
             </div>
           </div>
 
@@ -224,7 +255,13 @@ export default function PatientRecordsPage() {
       {/* Prescriptions Tab */}
       {activeTab === "prescriptions" && (
         <div className="space-y-6">
-          {records.prescriptions.map((prescription: any) => (
+          {!records.prescriptions || records.prescriptions.length === 0 ? (
+            <div className="card text-center py-12">
+              <div className="text-4xl mb-4">💊</div>
+              <p className="text-muted-foreground">No prescriptions found</p>
+            </div>
+          ) : (
+            records.prescriptions.map((prescription: any) => (
             <div key={prescription.id} className="card">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -258,24 +295,44 @@ export default function PatientRecordsPage() {
                 </div>
               </div>
             </div>
-          ))}
+          ))
+          )}
         </div>
       )}
 
       {/* Treatment History Tab */}
       {activeTab === "treatments" && (
         <div className="space-y-6">
-          {records.treatmentHistory.map((treatment: any) => (
+          {session?.user.userType === "NURSE" && (
+            <button
+              onClick={refreshRecords}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm mb-4"
+            >
+              🔄 Refresh
+            </button>
+          )}
+          {!records.treatmentHistory || records.treatmentHistory.length === 0 ? (
+            <div className="card text-center py-12">
+              <div className="text-4xl mb-4">🏥</div>
+              <p className="text-muted-foreground">No treatment history found</p>
+            </div>
+          ) : (
+            records.treatmentHistory.map((treatment: any) => (
             <div key={treatment.id} className="card">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-lg font-semibold">{treatment.type}</h3>
-                  <p className="text-slate-600">by {treatment.nurse}</p>
-                  <p className="text-sm text-slate-500">{new Date(treatment.date).toLocaleDateString()}</p>
+                  <p className="text-slate-600 dark:text-slate-400">by {treatment.nurse}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-500">{new Date(treatment.date).toLocaleDateString()}</p>
+                  {treatment.status && (
+                    <Badge variant={treatment.status === "completed" ? "default" : "secondary"} className="mt-1">
+                      {treatment.status}
+                    </Badge>
+                  )}
                 </div>
                 {treatment.nextVisit && (
                   <div className="text-right">
-                    <p className="text-sm text-slate-600">Next Visit:</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Next Visit:</p>
                     <p className="font-medium text-cyan-600">{new Date(treatment.nextVisit).toLocaleDateString()}</p>
                   </div>
                 )}
@@ -287,7 +344,7 @@ export default function PatientRecordsPage() {
                   <div className="space-y-1 text-sm">
                     {Object.entries(treatment.vitals).map(([key, value]) => (
                       <div key={key} className="flex justify-between">
-                        <span className="text-slate-600 capitalize">{key}:</span>
+                        <span className="text-slate-600 dark:text-slate-400 capitalize">{key}:</span>
                         <span className="font-medium">{String(value)}</span>
                       </div>
                     ))}
@@ -296,11 +353,24 @@ export default function PatientRecordsPage() {
 
                 <div>
                   <h4 className="font-medium mb-2">Notes</h4>
-                  <p className="text-sm text-slate-600">{treatment.notes}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{treatment.notes}</p>
+                  {treatment.medications && treatment.medications.length > 0 && (
+                    <div className="mt-3">
+                      <h5 className="font-medium text-xs mb-1">Medications:</h5>
+                      <div className="space-y-1">
+                        {treatment.medications.map((med: any, idx: number) => (
+                          <div key={idx} className="text-xs text-slate-600 dark:text-slate-400">
+                            💊 {med.name} - {med.frequency}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          ))}
+          ))
+          )}
         </div>
       )}
 

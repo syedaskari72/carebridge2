@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import PWAProvider from "@/components/PWAProvider";
 import Header from "@/components/Header";
+import MobileHeader from "@/components/MobileHeader";
 import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
 import { SessionProvider } from "@/components/SessionProvider";
@@ -45,8 +46,8 @@ export const viewport: Viewport = {
   themeColor: "#0891b2",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
   viewportFit: "cover",
 };
 
@@ -56,7 +57,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="mobile-web-app-capable" content="yes" />
@@ -67,6 +68,7 @@ export default function RootLayout({
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background overflow-x-hidden`}
+        suppressHydrationWarning
       >
         <ThemeProvider
           attribute="class"
@@ -79,8 +81,11 @@ export default function RootLayout({
             <NurseStatusProvider>
               <DrawerProvider>
                 <div className="flex flex-col min-h-screen w-full overflow-x-hidden">
-                  <Header />
-                  <main className="flex-1 pb-20 md:pb-0 w-full overflow-x-hidden">{children}</main>
+                  <div className="sticky top-0 z-50">
+                    <Header />
+                    <MobileHeader />
+                  </div>
+                  <main className="flex-1 pb-20 md:pb-0 w-full overflow-x-hidden relative z-10">{children}</main>
                   <Footer />
                   <BottomNav />
                   <PWAInstallPrompt />

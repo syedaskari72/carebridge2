@@ -18,6 +18,7 @@ import { useNurseStatus } from "@/contexts/NurseStatusContext";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { open: openDrawer } = useDrawer();
   const { data: session, status } = useSession();
   const { isOnDuty } = useNurseStatus();
@@ -27,29 +28,27 @@ export default function Header() {
 
   // Force re-render when session status changes
   useEffect(() => {
+    setMounted(true);
     console.log("[Header] Session status changed:", status);
   }, [status, session]);
 
   const handleSignOut = async () => {
+    if (!confirm("Are you sure you want to logout?")) {
+      return;
+    }
+    
     console.log("[Header] Starting logout process...");
+    
     try {
-      // Clear any local storage or session storage
-      localStorage.clear();
-      sessionStorage.clear();
-
-      // Sign out with NextAuth
-      await signOut({
-        callbackUrl: "/",
-        redirect: false
-      });
-
-      // Force a complete page reload to clear all state
-      window.location.href = "/";
+      await signOut({ redirect: false });
     } catch (error) {
       console.error("[Header] Logout error:", error);
-      // Fallback: force reload anyway
-      window.location.href = "/";
     }
+    
+    const isMobile = window.innerWidth < 768;
+    setTimeout(() => {
+      window.location.href = isMobile ? "/welcome" : "/";
+    }, 100);
   };
 
   const getNavigationItems = () => {
@@ -70,6 +69,7 @@ export default function Header() {
           { href: "/dashboard/nurse", label: "Dashboard" },
           { href: "/dashboard/nurse/assignments", label: "Assignments" },
           { href: "/dashboard/nurse/schedule", label: "Schedule" },
+          { href: "/assistant", label: "AI Assistant" },
         ];
       case "DOCTOR":
         return [
@@ -89,7 +89,7 @@ export default function Header() {
   const navigationItems = getNavigationItems();
 
   return (
-    <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm border-b border-border">
+    <header className="hidden md:block bg-gradient-to-b from-cyan-500 to-cyan-600 text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -99,16 +99,16 @@ export default function Header() {
               alt="CareBridge Logo"
               className="w-8 h-8 object-contain"
             />
-            <span className="text-xl font-bold text-foreground">CareBridge</span>
+            <span className="text-xl font-bold text-white">CareBridge</span>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            {navigationItems.map((item) => (
+            {mounted && navigationItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-muted-foreground hover:text-primary font-medium transition-colors"
+                className="text-white/80 hover:text-white font-medium transition-colors"
               >
                 {item.label}
               </Link>
@@ -118,7 +118,7 @@ export default function Header() {
           {/* CTA Button & User Menu */}
           <div className="hidden md:flex items-center space-x-3">
             <ThemeToggle />
-            {status === "loading" ? (
+            {!mounted || status === "loading" ? (
               <div className="text-sm text-muted-foreground">Loading...</div>
             ) : status === "authenticated" && session ? (
               <>

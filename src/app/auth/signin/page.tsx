@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
@@ -16,6 +16,7 @@ export default function SignInPage() {
   const [userType, setUserType] = useState("PATIENT");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,23 +58,23 @@ export default function SignInPage() {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto h-12 w-12 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center mb-4">
-            <span className="text-white font-bold text-xl">C</span>
+    <div className="min-h-screen flex items-center justify-center bg-background py-8 md:py-12 px-4 sm:px-6 lg:px-8 overflow-y-auto scrollbar-hide">
+      <Card className="w-full max-w-md border-0 md:border shadow-none md:shadow-sm">
+        <CardHeader className="text-center pt-6 md:pt-6">
+          <div className="mx-auto h-12 w-12 md:h-12 md:w-12 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-2xl md:rounded-lg flex items-center justify-center mb-4 md:mb-4 shadow-lg">
+            <img src="/applogo.png" alt="CareBridge" className="w-8 h-8 md:w-8 md:h-8 object-contain" />
           </div>
-          <CardTitle className="text-2xl">Sign in to CareBridge</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-3xl md:text-2xl font-bold">Sign in to CareBridge</CardTitle>
+          <CardDescription className="text-base md:text-sm mt-2">
             Or{" "}
-            <Link href="/auth/signup" className="font-medium text-primary hover:underline">
+            <Link href="/auth/signup" className="font-semibold text-primary hover:underline">
               create a new account
             </Link>
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-6 md:px-6">
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-5 md:space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg">
                 <AlertCircle className="h-4 w-4" />
@@ -112,23 +113,33 @@ export default function SignInPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
             </div>
 
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full"
+              className="w-full h-12 md:h-10 text-base md:text-sm font-semibold"
             >
               {isLoading ? "Signing in..." : "Sign in"}
             </Button>

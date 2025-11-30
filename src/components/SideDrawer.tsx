@@ -107,28 +107,23 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
   };
 
   const handleSignOut = async () => {
+    if (!confirm("Are you sure you want to logout?")) {
+      return;
+    }
+    
     console.log("[SideDrawer] Starting logout process...");
+    onClose();
+    
     try {
-      // Close the drawer first
-      onClose();
-
-      // Clear any local storage or session storage
-      localStorage.clear();
-      sessionStorage.clear();
-
-      // Sign out with NextAuth
-      await signOut({
-        callbackUrl: "/",
-        redirect: false
-      });
-
-      // Force a complete page reload to clear all state
-      window.location.href = "/";
+      await signOut({ redirect: false });
     } catch (error) {
       console.error("[SideDrawer] Logout error:", error);
-      // Fallback: force reload anyway
-      window.location.href = "/";
     }
+    
+    // Always redirect to welcome
+    setTimeout(() => {
+      window.location.href = "/welcome";
+    }, 100);
   };
 
   // Close drawer on escape key
@@ -180,6 +175,7 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
           { href: "/dashboard/nurse", label: "Nurse Dashboard", icon: Activity },
           { href: "/dashboard/nurse/assignments", label: "My Assignments", icon: Calendar },
           { href: "/dashboard/nurse/schedule", label: "My Schedule", icon: Calendar },
+          { href: "/assistant", label: "AI Assistant", icon: MessageSquare },
           { href: "/dashboard/nurse/safety", label: "Safety Center", icon: Shield },
         ];
       case "DOCTOR":
@@ -210,42 +206,42 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
       {/* Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-[70] md:hidden"
+          className="fixed inset-0 bg-black/50 z-[70] md:hidden transition-opacity duration-300"
           onClick={onClose}
         />
       )}
 
       {/* Drawer */}
       <div
-        className={`fixed top-0 left-0 h-full w-80 bg-background border-r border-border z-[80] transform transition-transform duration-300 ease-in-out md:hidden ${
+        className={`fixed top-0 left-0 h-full w-[85vw] max-w-sm bg-background border-r border-border z-[80] transform transition-transform duration-300 ease-out md:hidden shadow-2xl ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-border">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">C</span>
+          <div className="flex items-center justify-between p-5 border-b border-border bg-gradient-to-br from-cyan-500/10 to-blue-500/10 dark:from-cyan-500/20 dark:to-blue-500/20">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg">
+                <img src="/applogo.png" alt="C" className="w-7 h-7 object-contain" />
               </div>
               <span className="text-xl font-bold text-foreground">CareBridge</span>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-5 w-5" />
+            <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-accent">
+              <X className="h-6 w-6" />
             </Button>
           </div>
 
           {/* User Info */}
           {session && (
-            <div className="p-4 border-b border-border">
+            <div className="p-5 border-b border-border bg-muted/30">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                  <User className="h-5 w-5 text-primary" />
+                <div className="w-14 h-14 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-2xl flex items-center justify-center shadow-md">
+                  <User className="h-7 w-7 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground truncate">{session.user.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{session.user.email}</p>
-                  <p className="text-xs text-primary capitalize font-medium">
+                  <p className="font-semibold text-foreground truncate text-base">{session.user.name}</p>
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">{session.user.email}</p>
+                  <p className="text-xs text-primary capitalize font-semibold mt-1 inline-block px-2 py-0.5 bg-primary/15 rounded-full">
                     {session.user.userType.toLowerCase()}
                   </p>
                 </div>
@@ -263,10 +259,10 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
                     key={item.href}
                     href={item.href}
                     onClick={onClose}
-                    className="flex items-center space-x-3 px-3 py-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                    className="flex items-center space-x-3 px-4 py-3.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent/80 transition-all active:scale-98 active:bg-accent"
                   >
-                    <Icon className="h-5 w-5" />
-                    <span className="font-medium">{item.label}</span>
+                    <Icon className="h-5 w-5 stroke-[2]" />
+                    <span className="font-medium text-[15px]">{item.label}</span>
                   </Link>
                 );
               })}
@@ -284,14 +280,14 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
                   <Link
                     href="/nurses"
                     onClick={onClose}
-                    className="block px-3 py-2 rounded-lg bg-primary text-primary-foreground font-medium text-center"
+                    className="block px-4 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-center shadow-md active:scale-98 transition-transform"
                   >
                     Find Nurses
                   </Link>
                   <Link
                     href="/auth/emergency"
                     onClick={onClose}
-                    className="block px-3 py-2 rounded-lg bg-red-600 text-white font-medium text-center"
+                    className="block px-4 py-3 rounded-xl bg-red-600 text-white font-semibold text-center shadow-md active:scale-98 transition-transform"
                   >
                     🚨 Emergency
                   </Link>
@@ -322,7 +318,7 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
                     <button
                       onClick={handleCheckIn}
                       disabled={loadingCheckIn}
-                      className="w-full px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-medium text-center transition-colors"
+                      className="w-full px-4 py-3 rounded-xl bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-semibold text-center transition-all shadow-md active:scale-98"
                     >
                       {loadingCheckIn ? "Checking In..." : "✓ Check In"}
                     </button>
@@ -330,14 +326,14 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
                     <button
                       onClick={handleCheckOut}
                       disabled={loadingCheckIn}
-                      className="w-full px-3 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white font-medium text-center transition-colors"
+                      className="w-full px-4 py-3 rounded-xl bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white font-semibold text-center transition-all shadow-md active:scale-98"
                     >
                       {loadingCheckIn ? "Checking Out..." : "⏹ Check Out"}
                     </button>
                   )}
                   <button
                     onClick={handleSOS}
-                    className="w-full px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-center transition-colors"
+                    className="w-full px-4 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-center transition-all shadow-md active:scale-98"
                   >
                     🚨 SOS Alert
                   </button>
